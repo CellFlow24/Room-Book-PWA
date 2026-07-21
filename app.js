@@ -606,26 +606,3 @@ async function adminChore(subAction) {
         messageEl.innerText = "Server connection failed.";
     }
 }
-
-    messageEl.innerText = "Processing...";
-    messageEl.style.color = "#333";
-
-    try {
-        const response = await fetch(API_URL, {
-            method: "POST",
-            body: JSON.stringify(payload)
-        });
-        const data = await response.json();
-        
-        messageEl.innerText = data.message;
-        messageEl.style.color = data.status === "success" ? "#27ae60" : "#e74c3c";
-        
-        if (data.status === "success") {
-            document.getElementById("newChoreName").value = "";
-            document.getElementById("newChoreAmount").value = "";
-            await loadAdminData(); // Refresh dropdowns
-        }
-    } catch (error) {
-        messageEl.innerText = "Server connection failed.";
-    }
-}
