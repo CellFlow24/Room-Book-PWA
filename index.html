@@ -100,6 +100,19 @@
         </div>
     </div>
 
+    <!-- EXPENSE REVIEW SCREEN -->
+    <div id="expense-review-screen" class="screen" style="display: none;">
+        <div class="login-box">
+            <h2 class="app-title">History</h2>
+            
+            <div id="review-content" style="background: rgba(255,255,255,0.8); padding: 15px; border-radius: 12px; color: #2c3e50; text-align: left; max-height: 400px; overflow-y: auto;">
+                Loading history...
+            </div>
+
+            <button onclick="goBackToDashboard()" class="back-btn" style="margin-top: 15px;">BACK</button>
+        </div>
+    </div>
+
     <script src="app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
