@@ -21,33 +21,57 @@
         </div>
     </div>
 
-    <!-- PASSWORD RESET SCREEN (For new users) -->
+    <!-- PASSWORD RESET SCREEN -->
     <div id="reset-screen" class="screen" style="display: none;">
-        <h2>Update Password</h2>
-        <p>Since this is your first time, please create a new password.</p>
         <div class="login-box">
+            <h2 class="app-title">Update Password</h2>
+            <p style="color: #2c3e50; margin-bottom: 15px;">Since this is your first time, please create a new password.</p>
             <input type="password" id="newPassword" placeholder="New Password">
             <button onclick="changePassword()">SAVE PASSWORD</button>
             <p id="reset-message" class="error-text"></p>
         </div>
     </div>
 
-    <!-- MAIN DASHBOARD (Hidden until login) -->
+    <!-- MAIN DASHBOARD -->
     <div id="dashboard-screen" class="screen" style="display: none;">
-        <h1 id="welcome-text"></h1>
-        <div class="button-grid">
-            <button class="nav-btn">EXPENCE</button>
-            <button class="nav-btn">COOKING & CLEANING</button>
-            <button class="nav-btn">Pay Detels</button>
-            <button class="nav-btn">EXPENCE REVIEW</button>
-            <button class="nav-btn">Chat</button>
+        <div class="login-box">
+            <h2 id="welcome-text" class="app-title"></h2>
+            
+            <div class="button-grid">
+                <button class="nav-btn">💸 EXPENCE</button>
+                <button class="nav-btn">🧹 COOKING & CLEANING</button>
+                <button class="nav-btn">💳 Pay Detels</button>
+                <button class="nav-btn">📊 EXPENCE REVIEW</button>
+                <button class="nav-btn">💬 Chat</button>
+            </div>
+            
+            <button onclick="logout()" class="logout-btn">🚪 Logout</button>
         </div>
-        <button onclick="logout()" class="logout-btn">Logout</button>
+    </div>
+
+    <!-- EXPENSE ENTRY SCREEN -->
+    <div id="expense-screen" class="screen" style="display: none;">
+        <div class="login-box">
+            <h2 class="app-title">Add Expense</h2>
+            
+            <input type="text" id="expenseFor" placeholder="What is it for? (e.g. Dinner)">
+            <input type="number" id="expenseAmount" placeholder="Amount (₹)">
+            
+            <div class="split-section">
+                <p class="split-title">Split With:</p>
+                <label class="split-label"><input type="checkbox" class="split-check" value="Dipun" checked> Dipun</label>
+                <label class="split-label"><input type="checkbox" class="split-check" value="Partha" checked> Partha</label>
+                <label class="split-label"><input type="checkbox" class="split-check" value="Asib" checked> Asib</label>
+            </div>
+
+            <button onclick="saveExpense()">SAVE EXPENSE</button>
+            <button onclick="goBackToDashboard()" class="back-btn">BACK</button>
+            <p id="expense-message" class="error-text"></p>
+        </div>
     </div>
 
     <script src="app.js"></script>
     <script>
-        // Register Service Worker for PWA
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
         }
