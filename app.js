@@ -128,10 +128,35 @@ function logout() {
 // --- Expense Tracking Logic ---
 
 // Connect the 1st button (EXPENCE)
-document.querySelector('.button-grid button:nth-child(1)').onclick = () => {
+document.querySelector('.button-grid button:nth-child(1)').onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
     document.getElementById("expense-screen").style.display = "block";
+    await loadActiveUsers();
 };
+
+async function loadActiveUsers() {
+    const container = document.getElementById("dynamic-split-users");
+    container.innerHTML = '<p style="font-size: 14px; color: #333;">Loading users...</p>';
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getActiveUsers" })
+        });
+        const data = await response.json();
+        
+        if (data.status === "success") {
+            container.innerHTML = "";
+            data.users.forEach(user => {
+                container.innerHTML += `<label class="split-label"><input type="checkbox" class="split-check" value="${user}" checked> ${user}</label>`;
+            });
+        } else {
+            container.innerHTML = "Error loading users.";
+        }
+    } catch (error) {
+        container.innerHTML = "Connection failed.";
+    }
+}
 
 async function saveExpense() {
     const expenseFor = document.getElementById("expenseFor").value;
@@ -288,11 +313,18 @@ document.querySelector('.button-grid button:nth-child(3)').onclick = async () =>
         const data = await response.json();
 
         if (data.status === "success") {
-            // The Math Engine
-            const users = ["Dipun", "Partha", "Asib"];
-            let balances = { Dipun: 0, Partha: 0, Asib: 0 };
-            let totalPaid = { Dipun: 0, Partha: 0, Asib: 0 };
-            let choresEarned = { Dipun: 0, Partha: 0, Asib: 0 };
+            // The Math Engine (Now 100% Dynamic!)
+            const users = data.activeUsers; 
+            let balances = {};
+            let totalPaid = {};
+            let choresEarned = {};
+            
+            // Automatically set up accounts for all active users
+            users.forEach(u => {
+                balances[u] = 0;
+                totalPaid[u] = 0;
+                choresEarned[u] = 0;
+            });
 
             // 1. Calculate Expenses
             data.expenses.forEach(exp => {
@@ -303,12 +335,12 @@ document.querySelector('.button-grid button:nth-child(3)').onclick = async () =>
 
                 if (splitCount > 0 && users.includes(payer)) {
                     totalPaid[payer] += amount;
-                    balances[payer] += amount; // Payer gets positive balance for paying
+                    balances[payer] += amount; 
                     
                     const share = amount / splitCount;
                     splitList.forEach(person => {
                         if (users.includes(person)) {
-                            balances[person] -= share; // Subtract share from everyone involved
+                            balances[person] -= share;
                         }
                     });
                 }
@@ -321,9 +353,8 @@ document.querySelector('.button-grid button:nth-child(3)').onclick = async () =>
                 
                 if (users.includes(earner)) {
                     choresEarned[earner] += amount;
-                    balances[earner] += amount; // Earner gets the full amount
+                    balances[earner] += amount; 
                     
-                    // The other two users pay for it equally
                     const others = users.filter(u => u !== earner);
                     if (others.length > 0) {
                         const splitCost = amount / others.length;
