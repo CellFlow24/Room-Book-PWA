@@ -111,6 +111,69 @@ function goBackToDashboard() {
     document.getElementById("expense-message").innerText = "";
     document.getElementById("chore-message").innerText = "";
 }
+
+// --- Expense Tracking Logic ---
+
+// Connect the 1st button (EXPENCE)
+document.querySelector('.button-grid button:nth-child(1)').onclick = () => {
+    document.getElementById("dashboard-screen").style.display = "none";
+    document.getElementById("expense-screen").style.display = "block";
+};
+
+async function saveExpense() {
+    const expenseFor = document.getElementById("expenseFor").value;
+    const amount = document.getElementById("expenseAmount").value;
+    const messageEl = document.getElementById("expense-message");
+
+    // Gather all checked users to split with
+    const checkboxes = document.querySelectorAll('.split-check:checked');
+    let splitWith = [];
+    checkboxes.forEach((cb) => {
+        splitWith.push(cb.value);
+    });
+
+    if (!expenseFor || !amount || splitWith.length === 0) {
+        messageEl.innerText = "Please fill all details and select at least one person.";
+        return;
+    }
+
+    messageEl.innerText = "Saving to database...";
+
+    const payload = {
+        action: "addExpense",
+        userId: currentUser,
+        expenseFor: expenseFor,
+        amount: parseFloat(amount),
+        splitWith: splitWith.join(", ")
+    };
+
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+
+        if (data.status === "success") {
+            // Clear the form
+            document.getElementById("expenseFor").value = "";
+            document.getElementById("expenseAmount").value = "";
+            messageEl.style.color = "#27ae60"; // Green success text
+            messageEl.innerText = "Expense saved successfully!";
+            
+            // Automatically go back to dashboard after 1.5 seconds
+            setTimeout(() => {
+                goBackToDashboard();
+                messageEl.style.color = "#d63031"; // Reset color to red for future errors
+            }, 1500); 
+        } else {
+            messageEl.innerText = data.message;
+        }
+    } catch (error) {
+        messageEl.innerText = "Error saving expense.";
+    }
+}
+
 // --- Chore Tracking Logic ---
 
 // Connect the 2nd button (COOKING & CLEANING)
