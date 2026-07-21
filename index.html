@@ -11,8 +11,9 @@
 
     <!-- LOGIN SCREEN -->
     <div id="login-screen" class="screen">
-        <h1>Room Book</h1>
         <div class="login-box">
+            <img src="icon-192.png" alt="Room Book Logo" class="app-logo">
+            <h1 class="app-title">Room Book</h1>
             <input type="text" id="userId" placeholder="User ID">
             <input type="password" id="password" placeholder="Password">
             <button onclick="login()">LOGIN</button>
@@ -42,20 +43,6 @@
             <button class="nav-btn">Chat</button>
         </div>
         <button onclick="logout()" class="logout-btn">Logout</button>
-    </div>
-
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen" class="screen">
-        <div class="login-box">
-            <!-- Add your logo image here. Make sure you have a logo.png in your folder -->
-            <img src="icon-512.png" alt="Room Book Logo" class="app-logo">
-            <h1 class="app-title">Room Book</h1>
-            
-            <input type="text" id="userId" placeholder="User ID">
-            <input type="password" id="password" placeholder="Password">
-            <button onclick="login()">LOGIN</button>
-            <p id="login-message" class="error-text"></p>
-        </div>
     </div>
 
     <script src="app.js"></script>
