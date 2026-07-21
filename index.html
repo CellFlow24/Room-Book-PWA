@@ -62,9 +62,10 @@
             
             <div class="split-section">
                 <p class="split-title">Split With:</p>
-                <label class="split-label"><input type="checkbox" class="split-check" value="Dipun" checked> Dipun</label>
-                <label class="split-label"><input type="checkbox" class="split-check" value="Partha" checked> Partha</label>
-                <label class="split-label"><input type="checkbox" class="split-check" value="Asib" checked> Asib</label>
+                <div id="dynamic-split-users">
+                    <!-- Users will load here automatically -->
+                    <p style="font-size: 14px; color: #333;">Loading users...</p>
+                </div>
             </div>
 
             <button onclick="saveExpense()">SAVE EXPENSE</button>
