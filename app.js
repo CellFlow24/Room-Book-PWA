@@ -102,14 +102,15 @@ function logout() {
     document.getElementById("password").value = "";
     document.getElementById("login-message").innerText = "";
 }
+
 function goBackToDashboard() {
     document.getElementById("expense-screen").style.display = "none";
     document.getElementById("chore-screen").style.display = "none";
+    document.getElementById("pay-details-screen").style.display = "none";
     document.getElementById("dashboard-screen").style.display = "block";
     document.getElementById("expense-message").innerText = "";
     document.getElementById("chore-message").innerText = "";
 }
-
 // --- Chore Tracking Logic ---
 
 // Connect the 2nd button (COOKING & CLEANING)
@@ -192,3 +193,35 @@ async function saveChore() {
         messageEl.innerText = "Error saving work.";
     }
 }
+
+// --- Pay Details Logic ---
+
+// Connect the 3rd button (Pay Detels)
+document.querySelector('.button-grid button:nth-child(3)').onclick = async () => {
+    document.getElementById("dashboard-screen").style.display = "none";
+    document.getElementById("pay-details-screen").style.display = "block";
+    
+    const contentEl = document.getElementById("pay-details-content");
+    contentEl.innerHTML = "Fetching data from server...";
+
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getAllData" })
+        });
+        const data = await response.json();
+
+        if (data.status === "success") {
+            // Placeholder: Just proving we got the data. Next step is the math!
+            contentEl.innerHTML = `
+                <p>📊 Total Expenses Recorded: ${data.expenses.length}</p>
+                <p>🧹 Total Chores Logged: ${data.chores.length}</p>
+                <p style="color: #27ae60; margin-top: 10px;">Connection successful! Ready to build the splitting math.</p>
+            `;
+        } else {
+            contentEl.innerHTML = "Error loading data.";
+        }
+    } catch (error) {
+        contentEl.innerHTML = "Connection failed.";
+    }
+};
