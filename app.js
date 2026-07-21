@@ -102,3 +102,93 @@ function logout() {
     document.getElementById("password").value = "";
     document.getElementById("login-message").innerText = "";
 }
+function goBackToDashboard() {
+    document.getElementById("expense-screen").style.display = "none";
+    document.getElementById("chore-screen").style.display = "none";
+    document.getElementById("dashboard-screen").style.display = "block";
+    document.getElementById("expense-message").innerText = "";
+    document.getElementById("chore-message").innerText = "";
+}
+
+// --- Chore Tracking Logic ---
+
+// Connect the 2nd button (COOKING & CLEANING)
+document.querySelector('.button-grid button:nth-child(2)').onclick = async () => {
+    document.getElementById("dashboard-screen").style.display = "none";
+    document.getElementById("chore-screen").style.display = "block";
+    await loadChores(); // Fetch the dropdown options from Google Sheets
+};
+
+async function loadChores() {
+    const selectEl = document.getElementById("choreSelect");
+    selectEl.innerHTML = '<option value="">Loading...</option>';
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getChores" })
+        });
+        const data = await response.json();
+        
+        if (data.status === "success") {
+            selectEl.innerHTML = '<option value="">Select Work...</option>';
+            data.chores.forEach(chore => {
+                // Store the amount inside the option element so we can retrieve it later
+                selectEl.innerHTML += `<option value="${chore.name}" data-amount="${chore.amount}">${chore.name}</option>`;
+            });
+        }
+    } catch (error) {
+        selectEl.innerHTML = '<option value="">Error loading</option>';
+    }
+}
+
+// Update the Amount display when the user selects a different chore
+document.getElementById("choreSelect").addEventListener("change", function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const amount = selectedOption.getAttribute("data-amount") || 0;
+    document.getElementById("choreAmountDisplay").innerText = `Amount: ₹${amount}`;
+});
+
+async function saveChore() {
+    const selectEl = document.getElementById("choreSelect");
+    const messageEl = document.getElementById("chore-message");
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    
+    if (!selectEl.value) {
+        messageEl.innerText = "Please select a work category.";
+        return;
+    }
+
+    messageEl.innerText = "Saving to database...";
+    const amount = parseFloat(selectedOption.getAttribute("data-amount"));
+
+    const payload = {
+        action: "addChore",
+        userId: currentUser,
+        choreName: selectEl.value,
+        amount: amount
+    };
+
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+
+        if (data.status === "success") {
+            messageEl.style.color = "#27ae60";
+            messageEl.innerText = "Work logged successfully!";
+            setTimeout(() => {
+                goBackToDashboard();
+                messageEl.style.color = "#d63031";
+                selectEl.selectedIndex = 0;
+                document.getElementById("choreAmountDisplay").innerText = "Amount: ₹0";
+            }, 1500); 
+        } else {
+            messageEl.innerText = data.message;
+        }
+    } catch (error) {
+        messageEl.innerText = "Error saving work.";
+    }
+}
