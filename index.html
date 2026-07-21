@@ -43,6 +43,9 @@
                 <button class="nav-btn">💳 Pay Detels</button>
                 <button class="nav-btn">📊 EXPENCE REVIEW</button>
                 <button class="nav-btn">💬 Chat</button>
+                
+                <!-- Hidden Admin Button -->
+                <button id="admin-btn" class="nav-btn" style="display: none; background: rgba(243, 156, 18, 0.8); color: white; border: 2px solid #e67e22;">👑 Admin Panel</button>
             </div>
             
             <button onclick="logout()" class="logout-btn">🚪 Logout</button>
@@ -110,6 +113,51 @@
             </div>
 
             <button onclick="goBackToDashboard()" class="back-btn" style="margin-top: 15px;">BACK</button>
+        </div>
+    </div>
+
+    <!-- ADMIN SCREEN -->
+    <div id="admin-screen" class="screen" style="display: none;">
+        <div class="login-box">
+            <h2 class="app-title" style="color: #d35400;">👑 Admin Panel</h2>
+            <p id="admin-message" class="error-text"></p>
+            
+            <!-- User Management -->
+            <div style="background: rgba(255,255,255,0.6); padding: 10px; border-radius: 10px; margin-bottom: 15px; text-align: left;">
+                <h4 style="margin: 0 0 10px 0; color: #333;">👥 Manage Users</h4>
+                
+                <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                    <input type="text" id="newUsername" placeholder="New Username" style="padding: 8px;">
+                    <button onclick="adminUser('add')" style="padding: 8px; font-size: 14px;">Add User</button>
+                </div>
+                
+                <select id="adminUserSelect" style="width: 100%; padding: 8px; margin-bottom: 5px; border-radius: 8px;"><option>Loading...</option></select>
+                
+                <div style="display: flex; gap: 5px;">
+                    <button onclick="adminUser('reset')" style="padding: 8px; font-size: 12px; background: #3498db;">Reset Pass</button>
+                    <button onclick="adminUser('delete')" style="padding: 8px; font-size: 12px; background: #e74c3c;">Delete User</button>
+                </div>
+            </div>
+
+            <!-- Chore Management -->
+            <div style="background: rgba(255,255,255,0.6); padding: 10px; border-radius: 10px; text-align: left;">
+                <h4 style="margin: 0 0 10px 0; color: #333;">🧹 Manage Work</h4>
+                
+                <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                    <input type="text" id="newChoreName" placeholder="Work Name" style="padding: 8px; width: 60%;">
+                    <input type="number" id="newChoreAmount" placeholder="₹" style="padding: 8px; width: 40%;">
+                </div>
+                <button onclick="adminChore('add')" style="padding: 8px; font-size: 14px; margin-bottom: 10px;">Add Work</button>
+                
+                <select id="adminChoreSelect" style="width: 100%; padding: 8px; margin-bottom: 5px; border-radius: 8px;"><option>Loading...</option></select>
+                
+                <div style="display: flex; gap: 5px;">
+                    <button onclick="adminChore('edit')" style="padding: 8px; font-size: 12px; background: #f39c12;">Edit Work</button>
+                    <button onclick="adminChore('delete')" style="padding: 8px; font-size: 12px; background: #e74c3c;">Delete Work</button>
+                </div>
+            </div>
+
+            <button onclick="goBackToDashboard()" class="back-btn" style="margin-top: 15px;">BACK TO DASHBOARD</button>
         </div>
     </div>
 
