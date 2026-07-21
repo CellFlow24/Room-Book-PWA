@@ -90,7 +90,25 @@ function showDashboard(role) {
     document.getElementById("dashboard-screen").style.display = "block";
     document.getElementById("welcome-text").innerText = `Welcome, ${currentUser}`;
     
-    // In the future, we can hide/show specific buttons here if the role is 'Admin'
+    // Check role to show/hide Admin button
+    if (role === "Admin") {
+        document.getElementById("admin-btn").style.display = "block";
+    } else {
+        document.getElementById("admin-btn").style.display = "none";
+    }
+}
+
+function goBackToDashboard() {
+    document.getElementById("expense-screen").style.display = "none";
+    document.getElementById("chore-screen").style.display = "none";
+    document.getElementById("pay-details-screen").style.display = "none";
+    document.getElementById("expense-review-screen").style.display = "none";
+    document.getElementById("admin-screen").style.display = "none"; // Hide admin screen
+    document.getElementById("dashboard-screen").style.display = "block";
+    
+    document.getElementById("expense-message").innerText = "";
+    document.getElementById("chore-message").innerText = "";
+    document.getElementById("admin-message").innerText = "";
 }
 
 function logout() {
@@ -103,15 +121,6 @@ function logout() {
     document.getElementById("login-message").innerText = "";
 }
 
-function goBackToDashboard() {
-    document.getElementById("expense-screen").style.display = "none";
-    document.getElementById("chore-screen").style.display = "none";
-    document.getElementById("pay-details-screen").style.display = "none";
-    document.getElementById("expense-review-screen").style.display = "none";
-    document.getElementById("dashboard-screen").style.display = "block";
-    document.getElementById("expense-message").innerText = "";
-    document.getElementById("chore-message").innerText = "";
-}
 // --- Expense Tracking Logic ---
 
 // Connect the 1st button (EXPENCE)
@@ -427,3 +436,127 @@ document.querySelector('.button-grid button:nth-child(4)').onclick = async () =>
         contentEl.innerHTML = "Connection failed.";
     }
 };
+
+// --- Admin Logic ---
+
+document.getElementById("admin-btn").onclick = async () => {
+    document.getElementById("dashboard-screen").style.display = "none";
+    document.getElementById("admin-screen").style.display = "block";
+    await loadAdminData();
+};
+
+async function loadAdminData() {
+    const userSelect = document.getElementById("adminUserSelect");
+    const choreSelect = document.getElementById("adminChoreSelect");
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getAdminData" })
+        });
+        const data = await response.json();
+
+        if (data.status === "success") {
+            userSelect.innerHTML = '<option value="">Select a user...</option>';
+            data.users.forEach(user => {
+                userSelect.innerHTML += `<option value="${user}">${user}</option>`;
+            });
+
+            choreSelect.innerHTML = '<option value="">Select work to edit/delete...</option>';
+            data.chores.forEach(chore => {
+                choreSelect.innerHTML += `<option value="${chore.name}" data-amount="${chore.amount}">${chore.name} (₹${chore.amount})</option>`;
+            });
+        }
+    } catch (error) {
+        document.getElementById("admin-message").innerText = "Error loading data.";
+    }
+}
+
+async function adminUser(subAction) {
+    const messageEl = document.getElementById("admin-message");
+    let targetUser = "";
+
+    if (subAction === "add") {
+        targetUser = document.getElementById("newUsername").value.trim();
+        if (!targetUser) return messageEl.innerText = "Enter a username to add.";
+    } else {
+        targetUser = document.getElementById("adminUserSelect").value;
+        if (!targetUser) return messageEl.innerText = "Select a user from the list first.";
+    }
+
+    if (subAction === "delete" && !confirm(`Are you sure you want to lock ${targetUser} out of the app?`)) return;
+
+    messageEl.innerText = "Processing...";
+    messageEl.style.color = "#333";
+
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "adminUserAction", subAction: subAction, targetUser: targetUser })
+        });
+        const data = await response.json();
+        
+        messageEl.innerText = data.message;
+        messageEl.style.color = data.status === "success" ? "#27ae60" : "#e74c3c";
+        
+        if (data.status === "success") {
+            document.getElementById("newUsername").value = "";
+            await loadAdminData(); // Refresh dropdowns
+        }
+    } catch (error) {
+        messageEl.innerText = "Server connection failed.";
+    }
+}
+
+async function adminChore(subAction) {
+    const messageEl = document.getElementById("admin-message");
+    let payload = { action: "adminChoreAction", subAction: subAction };
+
+    if (subAction === "add") {
+        payload.choreName = document.getElementById("newChoreName").value.trim();
+        payload.amount = parseFloat(document.getElementById("newChoreAmount").value);
+        if (!payload.choreName || !payload.amount) return messageEl.innerText = "Enter work name and amount.";
+    } else {
+        const select = document.getElementById("adminChoreSelect");
+        if (!select.value) return messageEl.innerText = "Select work from the list first.";
+        
+        if (subAction === "delete") {
+            payload.choreName = select.value;
+            if (!confirm(`Delete ${payload.choreName}?`)) return;
+        } 
+        
+        if (subAction === "edit") {
+            const selectedOpt = select.options[select.selectedIndex];
+            payload.oldName = select.value;
+            payload.newName = prompt("Enter new name for this work:", payload.oldName);
+            if (!payload.newName) return; // User cancelled
+            
+            const currentAmount = selectedOpt.getAttribute("data-amount");
+            const newAmt = prompt("Enter new amount (₹):", currentAmount);
+            if (!newAmt) return; // User cancelled
+            payload.amount = parseFloat(newAmt);
+        }
+    }
+
+    messageEl.innerText = "Processing...";
+    messageEl.style.color = "#333";
+
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        
+        messageEl.innerText = data.message;
+        messageEl.style.color = data.status === "success" ? "#27ae60" : "#e74c3c";
+        
+        if (data.status === "success") {
+            document.getElementById("newChoreName").value = "";
+            document.getElementById("newChoreAmount").value = "";
+            await loadAdminData(); // Refresh dropdowns
+        }
+    } catch (error) {
+        messageEl.innerText = "Server connection failed.";
+    }
+}
