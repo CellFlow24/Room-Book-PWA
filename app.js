@@ -512,6 +512,49 @@ async function adminUser(subAction) {
     }
 }
 
+// --- Custom Edit Modal Controls ---
+function closeEditModal() {
+    document.getElementById("custom-edit-modal").style.display = "none";
+}
+
+async function saveEditedChore() {
+    const oldName = document.getElementById("editOldName").value;
+    const newName = document.getElementById("editNewName").value.trim();
+    const newAmount = parseFloat(document.getElementById("editNewAmount").value);
+    const messageEl = document.getElementById("admin-message");
+
+    if (!newName || !newAmount) {
+        alert("Please fill in both name and amount.");
+        return;
+    }
+
+    closeEditModal();
+    messageEl.innerText = "Processing edit...";
+    messageEl.style.color = "#333";
+
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "adminChoreAction",
+                subAction: "edit",
+                oldName: oldName,
+                newName: newName,
+                amount: newAmount
+            })
+        });
+        const data = await response.json();
+        
+        messageEl.innerText = data.message;
+        messageEl.style.color = data.status === "success" ? "#27ae60" : "#e74c3c";
+        
+        if (data.status === "success") await loadAdminData();
+    } catch (error) {
+        messageEl.innerText = "Server connection failed.";
+    }
+}
+
+// --- Admin Work Logic ---
 async function adminChore(subAction) {
     const messageEl = document.getElementById("admin-message");
     let payload = { action: "adminChoreAction", subAction: subAction };
@@ -526,21 +569,43 @@ async function adminChore(subAction) {
         
         if (subAction === "delete") {
             payload.choreName = select.value;
-            if (!confirm(`Delete ${payload.choreName}?`)) return;
+            if (!confirm(`Are you sure you want to delete ${payload.choreName}?`)) return;
         } 
         
         if (subAction === "edit") {
+            // OPEN CUSTOM MODAL INSTEAD OF BROWSER PROMPT
             const selectedOpt = select.options[select.selectedIndex];
-            payload.oldName = select.value;
-            payload.newName = prompt("Enter new name for this work:", payload.oldName);
-            if (!payload.newName) return; // User cancelled
+            document.getElementById("editOldName").value = select.value;
+            document.getElementById("editNewName").value = select.value;
+            document.getElementById("editNewAmount").value = selectedOpt.getAttribute("data-amount");
             
-            const currentAmount = selectedOpt.getAttribute("data-amount");
-            const newAmt = prompt("Enter new amount (₹):", currentAmount);
-            if (!newAmt) return; // User cancelled
-            payload.amount = parseFloat(newAmt);
+            document.getElementById("custom-edit-modal").style.display = "flex";
+            return; // Stop execution here, wait for modal buttons
         }
     }
+
+    messageEl.innerText = "Processing...";
+    messageEl.style.color = "#333";
+
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        
+        messageEl.innerText = data.message;
+        messageEl.style.color = data.status === "success" ? "#27ae60" : "#e74c3c";
+        
+        if (data.status === "success") {
+            document.getElementById("newChoreName").value = "";
+            document.getElementById("newChoreAmount").value = "";
+            await loadAdminData(); 
+        }
+    } catch (error) {
+        messageEl.innerText = "Server connection failed.";
+    }
+}
 
     messageEl.innerText = "Processing...";
     messageEl.style.color = "#333";
