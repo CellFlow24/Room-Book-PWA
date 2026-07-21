@@ -70,6 +70,23 @@
         </div>
     </div>
 
+    <!-- CHORE ENTRY SCREEN -->
+    <div id="chore-screen" class="screen" style="display: none;">
+        <div class="login-box">
+            <h2 class="app-title">Log Work</h2>
+            
+            <select id="choreSelect" style="padding: 15px; border-radius: 12px; border: 2px solid rgba(255,255,255, 0.6); background: rgba(255,255,255, 0.8); font-size: 16px; outline: none; width: 100%; margin-bottom: 15px;">
+                <option value="">Loading work list...</option>
+            </select>
+            
+            <p id="choreAmountDisplay" style="color: #2c3e50; font-weight: bold; margin-bottom: 15px;">Amount: ₹0</p>
+
+            <button onclick="saveChore()">SAVE WORK</button>
+            <button onclick="goBackToDashboard()" class="back-btn" style="margin-top: 10px;">BACK</button>
+            <p id="chore-message" class="error-text"></p>
+        </div>
+    </div>
+
     <script src="app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
