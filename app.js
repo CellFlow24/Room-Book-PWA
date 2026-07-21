@@ -90,11 +90,15 @@ function showDashboard(role) {
     document.getElementById("dashboard-screen").style.display = "block";
     document.getElementById("welcome-text").innerText = `Welcome, ${currentUser}`;
     
-    // Check role to show/hide Admin button
+    // Check role to show/hide specific buttons
     if (role === "Admin") {
         document.getElementById("admin-btn").style.display = "block";
+        document.querySelector('.button-grid button:nth-child(1)').style.display = "none"; // Hide EXPENCE
+        document.querySelector('.button-grid button:nth-child(2)').style.display = "none"; // Hide COOKING & CLEANING
     } else {
         document.getElementById("admin-btn").style.display = "none";
+        document.querySelector('.button-grid button:nth-child(1)').style.display = "block"; 
+        document.querySelector('.button-grid button:nth-child(2)').style.display = "block"; 
     }
 }
 
