@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Room Book PWA</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="screen">
+        <h1>Room Book</h1>
+        <div class="login-box">
+            <input type="text" id="userId" placeholder="User ID">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()">LOGIN</button>
+            <p id="login-message" class="error-text"></p>
+        </div>
+    </div>
+
+    <!-- PASSWORD RESET SCREEN (For new users) -->
+    <div id="reset-screen" class="screen" style="display: none;">
+        <h2>Update Password</h2>
+        <p>Since this is your first time, please create a new password.</p>
+        <div class="login-box">
+            <input type="password" id="newPassword" placeholder="New Password">
+            <button onclick="changePassword()">SAVE PASSWORD</button>
+            <p id="reset-message" class="error-text"></p>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD (Hidden until login) -->
+    <div id="dashboard-screen" class="screen" style="display: none;">
+        <h1 id="welcome-text"></h1>
+        <div class="button-grid">
+            <button class="nav-btn">EXPENCE</button>
+            <button class="nav-btn">COOKING & CLEANING</button>
+            <button class="nav-btn">Pay Detels</button>
+            <button class="nav-btn">EXPENCE REVIEW</button>
+            <button class="nav-btn">Chat</button>
+        </div>
+        <button onclick="logout()" class="logout-btn">Logout</button>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
