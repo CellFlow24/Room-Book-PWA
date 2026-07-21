@@ -265,7 +265,7 @@ document.querySelector('.button-grid button:nth-child(3)').onclick = async () =>
     document.getElementById("pay-details-screen").style.display = "block";
     
     const contentEl = document.getElementById("pay-details-content");
-    contentEl.innerHTML = "Fetching data from server...";
+    contentEl.innerHTML = "Calculating balances...";
 
     try {
         const response = await fetch(API_URL, {
@@ -275,12 +275,78 @@ document.querySelector('.button-grid button:nth-child(3)').onclick = async () =>
         const data = await response.json();
 
         if (data.status === "success") {
-            // Placeholder: Just proving we got the data. Next step is the math!
-            contentEl.innerHTML = `
-                <p>📊 Total Expenses Recorded: ${data.expenses.length}</p>
-                <p>🧹 Total Chores Logged: ${data.chores.length}</p>
-                <p style="color: #27ae60; margin-top: 10px;">Connection successful! Ready to build the splitting math.</p>
-            `;
+            // The Math Engine
+            const users = ["Dipun", "Partha", "Asib"];
+            let balances = { Dipun: 0, Partha: 0, Asib: 0 };
+            let totalPaid = { Dipun: 0, Partha: 0, Asib: 0 };
+            let choresEarned = { Dipun: 0, Partha: 0, Asib: 0 };
+
+            // 1. Calculate Expenses
+            data.expenses.forEach(exp => {
+                const amount = parseFloat(exp.amount) || 0;
+                const payer = exp.paidBy;
+                const splitList = exp.splitWith.split(',').map(s => s.trim());
+                const splitCount = splitList.length;
+
+                if (splitCount > 0 && users.includes(payer)) {
+                    totalPaid[payer] += amount;
+                    balances[payer] += amount; // Payer gets positive balance for paying
+                    
+                    const share = amount / splitCount;
+                    splitList.forEach(person => {
+                        if (users.includes(person)) {
+                            balances[person] -= share; // Subtract share from everyone involved
+                        }
+                    });
+                }
+            });
+
+            // 2. Calculate Chores (Cooking & Cleaning)
+            data.chores.forEach(chore => {
+                const amount = parseFloat(chore.amount) || 0;
+                const earner = chore.doneBy;
+                
+                if (users.includes(earner)) {
+                    choresEarned[earner] += amount;
+                    balances[earner] += amount; // Earner gets the full amount
+                    
+                    // The other two users pay for it equally
+                    const others = users.filter(u => u !== earner);
+                    if (others.length > 0) {
+                        const splitCost = amount / others.length;
+                        others.forEach(person => {
+                            balances[person] -= splitCost;
+                        });
+                    }
+                }
+            });
+
+            // 3. Build the UI Cards
+            let html = `<h3 style="margin-top:0; text-align:center; color:#2c3e50;">Balance Sheet</h3>`;
+            
+            users.forEach(user => {
+                const balance = balances[user];
+                const isOwed = balance > 0;
+                const color = isOwed ? "#27ae60" : (balance < 0 ? "#e74c3c" : "#2c3e50");
+                const statusText = isOwed ? "Gets Back" : (balance < 0 ? "Owes" : "Settled");
+                
+                html += `
+                <div style="background: white; padding: 15px; margin-bottom: 12px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <h4 style="margin: 0 0 10px 0; font-size: 18px; color: #333;">${user}</h4>
+                    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px;">
+                        <span>Total Paid:</span> <span>₹${totalPaid[user].toFixed(2)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px;">
+                        <span>Work Earned:</span> <span>₹${choresEarned[user].toFixed(2)}</span>
+                    </div>
+                    <hr style="border: 0; border-top: 1px solid #eee; margin: 8px 0;">
+                    <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; color: ${color};">
+                        <span>${statusText}:</span> <span>₹${Math.abs(balance).toFixed(2)}</span>
+                    </div>
+                </div>`;
+            });
+
+            contentEl.innerHTML = html;
         } else {
             contentEl.innerHTML = "Error loading data.";
         }
