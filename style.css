@@ -6,6 +6,17 @@
     --accent-hover: #ff4760;
 }
 
+/* Animations */
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popIn {
+    0% { opacity: 0; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
 body {
     background: var(--bg-gradient);
     background-attachment: fixed;
@@ -15,54 +26,59 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
 }
 
 .screen {
     width: 100%;
-    max-width: 400px;
-    padding: 20px;
+    max-width: 420px; /* Made slightly wider to use screen space better */
+    padding: 15px;
     text-align: center;
     box-sizing: border-box;
 }
 
-/* Glassmorphism Card */
+/* Glassmorphism Card with Entry Animation */
 .login-box {
     background: var(--card-bg);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.5);
-    padding: 30px 25px;
+    padding: 40px 25px; /* Increased top/bottom padding to stretch it out */
     border-radius: 24px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 18px; /* Added slightly more space between items */
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    animation: slideUpFade 0.6s ease-out forwards;
 }
 
 .app-title {
     margin: 0 0 10px 0;
     color: #2c3e50;
     font-weight: 800;
+    font-size: 28px;
 }
 
+/* Much larger, animated Logo */
 .app-logo {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto;
+    width: 140px; 
+    height: 140px;
+    margin: 0 auto 10px auto;
     object-fit: cover;
     border-radius: 30%;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
     background-color: white;
+    animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 input[type="text"], 
 input[type="password"], 
-input[type="number"] {
-    padding: 15px;
+input[type="number"],
+select {
+    padding: 16px; /* Slightly taller inputs */
     border-radius: 12px;
     border: 2px solid rgba(255,255,255, 0.6);
-    background: rgba(255,255,255, 0.8);
+    background: rgba(255,255,255, 0.9);
     font-size: 16px;
     outline: none;
     transition: all 0.3s ease;
@@ -70,54 +86,67 @@ input[type="number"] {
     box-sizing: border-box;
 }
 
-input:focus {
+input:focus, select:focus {
     border-color: var(--accent);
     background: white;
+    box-shadow: 0 0 10px rgba(255, 107, 129, 0.2);
 }
 
 /* Base Button Style */
 button {
     background-color: var(--accent);
     color: white;
-    padding: 15px;
+    padding: 16px;
     border: none;
     border-radius: 12px;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: bold;
     cursor: pointer;
-    transition: transform 0.2s, background-color 0.3s;
+    transition: transform 0.2s, background-color 0.3s, box-shadow 0.3s;
     box-shadow: 0 4px 15px rgba(255, 107, 129, 0.4);
     width: 100%;
 }
 
 button:active {
     transform: scale(0.95);
+    box-shadow: 0 2px 10px rgba(255, 107, 129, 0.3);
 }
 
-/* Dashboard Navigation Buttons */
+/* Dashboard Navigation Buttons - Staggered Animations */
 .button-grid {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
     width: 100%;
 }
 
 .nav-btn {
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.6);
     color: #2c3e50;
     border: 2px solid rgba(255, 255, 255, 0.7);
     box-shadow: none;
     text-align: left;
     padding-left: 20px;
+    opacity: 0; /* Start invisible for animation */
+    animation: slideUpFade 0.5s ease-out forwards;
 }
 
+/* Make the buttons load one by one like a domino effect */
+.button-grid button:nth-child(1) { animation-delay: 0.1s; }
+.button-grid button:nth-child(2) { animation-delay: 0.2s; }
+.button-grid button:nth-child(3) { animation-delay: 0.3s; }
+.button-grid button:nth-child(4) { animation-delay: 0.4s; }
+.button-grid button:nth-child(5) { animation-delay: 0.5s; }
+.button-grid button:nth-child(6) { animation-delay: 0.6s; }
+
 .nav-btn:hover {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
 }
 
 .logout-btn {
     background-color: #ff4757;
-    margin-top: 10px;
+    margin-top: 20px; /* Pushes logout further down */
 }
 
 .back-btn {
@@ -129,7 +158,7 @@ button:active {
 .split-section {
     text-align: left;
     margin: 5px 0;
-    background: rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.5);
     padding: 15px;
     border-radius: 12px;
 }
@@ -144,14 +173,14 @@ button:active {
     display: block;
     color: #2c3e50;
     font-size: 16px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     font-weight: 600;
 }
 
-.split-check {
-    width: 18px;
-    height: 18px;
-    margin-right: 8px;
+.split-check, .chore-split-check {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
     vertical-align: middle;
 }
 
