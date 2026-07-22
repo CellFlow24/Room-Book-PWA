@@ -202,23 +202,29 @@
     </div>
 
     <!-- CHAT SCREEN -->
-    <div id="chat-screen" class="screen" style="display: none;">
-        <div class="login-box" style="padding: 20px 15px; height: 85vh; display: flex; flex-direction: column; justify-content: space-between;">
-            <h2 class="app-title" style="margin-bottom: 15px;">Live Chat</h2>
+    <div id="chat-screen" class="screen" style="display: none; height: 100dvh; padding: 10px;">
+        <div class="login-box" style="padding: 15px; height: 100%; display: flex; flex-direction: column; box-sizing: border-box; justify-content: space-between;">
             
-            <div id="chat-box" style="flex: 1; overflow-y: auto; background: rgba(255,255,255,0.5); border-radius: 15px; padding: 15px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.6);">
+            <!-- Header with integrated Back button -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-shrink: 0;">
+                <h2 class="app-title" style="margin: 0; font-size: 22px;">Live Chat</h2>
+                <button onclick="goBackToDashboard()" style="width: auto; padding: 8px 15px; background: #7f8fa6; box-shadow: none; font-size: 14px; border-radius: 8px;">BACK</button>
+            </div>
+            
+            <!-- Chat Messages Area -->
+            <div id="chat-box" style="flex: 1; overflow-y: auto; background: rgba(255,255,255,0.5); border-radius: 15px; padding: 15px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.6);">
                 <!-- Messages will load here -->
             </div>
 
-            <div style="display: flex; gap: 8px;">
-                <input type="text" id="chatInput" placeholder="Type a message or @tag..." style="flex: 1; padding: 14px; margin-bottom: 0;">
+            <!-- Input Area -->
+            <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                <input type="text" id="chatInput" placeholder="Type a message..." style="flex: 1; padding: 14px; margin-bottom: 0;">
                 <button onclick="sendChatMessage()" style="width: auto; padding: 14px 22px; margin-bottom: 0; display: flex; align-items: center; justify-content: center;">Send</button>
             </div>
             
-            <button onclick="goBackToDashboard()" class="back-btn" style="margin-top: 15px; padding: 12px;">BACK</button>
         </div>
     </div>
-
+    
     <script src="app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
