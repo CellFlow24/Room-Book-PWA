@@ -1,4 +1,4 @@
-const CACHE_NAME = 'roombook-v17'; 
+const CACHE_NAME = 'roombook-v18'; 
 
 const urlsToCache = [
   '/',
