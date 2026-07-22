@@ -43,8 +43,6 @@
                 <button class="nav-btn">💳 Pay Detels</button>
                 <button class="nav-btn">📊 EXPENCE REVIEW</button>
                 <button class="nav-btn">💬 Chat</button>
-                
-                <!-- Hidden Admin Button -->
                 <button id="admin-btn" class="nav-btn" style="display: none; background: rgba(243, 156, 18, 0.8); color: white; border: 2px solid #e67e22;">👑 Admin Panel</button>
             </div>
             
@@ -63,7 +61,6 @@
             <div class="split-section">
                 <p class="split-title">Split With:</p>
                 <div id="dynamic-split-users">
-                    <!-- Users will load here automatically -->
                     <p style="font-size: 14px; color: #333;">Loading users...</p>
                 </div>
             </div>
@@ -79,9 +76,13 @@
         <div class="login-box">
             <h2 class="app-title">Log Work</h2>
             
-            <select id="choreSelect" style="padding: 15px; border-radius: 12px; border: 2px solid rgba(255,255,255, 0.6); background: rgba(255,255,255, 0.8); font-size: 16px; outline: none; width: 100%; margin-bottom: 15px;">
-                <option value="">Loading work list...</option>
-            </select>
+            <!-- NEW CUSTOM DROPDOWN -->
+            <div class="custom-dropdown" style="margin-bottom: 15px;">
+                <button type="button" class="dropdown-btn" id="choreSelectBtn" onclick="toggleDropdown('choreOptions')">Select Work...</button>
+                <div class="dropdown-content" id="choreOptions"></div>
+                <input type="hidden" id="choreSelect">
+                <input type="hidden" id="choreSelectAmount">
+            </div>
             
             <p id="choreAmountDisplay" style="color: #2c3e50; font-weight: bold; margin-bottom: 15px;">Amount: ₹0</p>
 
@@ -97,7 +98,7 @@
             <p id="chore-message" class="error-text"></p>
         </div>
     </div>
-    
+
     <!-- PAY DETAILS SCREEN -->
     <div id="pay-details-screen" class="screen" style="display: none;">
         <div class="login-box">
@@ -131,55 +132,66 @@
             <p id="admin-message" class="error-text"></p>
             
             <!-- User Management -->
-            <div style="background: rgba(255,255,255,0.6); padding: 10px; border-radius: 10px; margin-bottom: 15px; text-align: left;">
+            <div style="background: rgba(255,255,255,0.6); padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: left;">
                 <h4 style="margin: 0 0 10px 0; color: #333;">👥 Manage Users</h4>
                 
                 <div style="display: flex; gap: 5px; margin-bottom: 10px;">
-                    <input type="text" id="newUsername" placeholder="New Username" style="padding: 8px;">
-                    <button onclick="adminUser('add')" style="padding: 8px; font-size: 14px;">Add User</button>
+                    <input type="text" id="newUsername" placeholder="New Username" style="padding: 10px; font-size: 14px;">
+                    <button onclick="adminUser('add')" style="padding: 10px; font-size: 14px; width: auto;">Add</button>
                 </div>
                 
-                <select id="adminUserSelect" style="width: 100%; padding: 8px; margin-bottom: 5px; border-radius: 8px;"><option>Loading...</option></select>
+                <!-- CUSTOM ADMIN USER DROPDOWN -->
+                <div class="custom-dropdown">
+                    <button type="button" class="dropdown-btn" id="adminUserSelectBtn" style="padding: 12px; font-size: 14px;" onclick="toggleDropdown('adminUserOptions')">Select a user...</button>
+                    <div class="dropdown-content" id="adminUserOptions"></div>
+                    <input type="hidden" id="adminUserSelect">
+                </div>
                 
-                <div style="display: flex; gap: 5px;">
-                    <button onclick="adminUser('reset')" style="padding: 8px; font-size: 12px; background: #3498db;">Reset Pass</button>
-                    <button onclick="adminUser('delete')" style="padding: 8px; font-size: 12px; background: #e74c3c;">Delete User</button>
+                <div style="display: flex; gap: 5px; margin-top: 10px;">
+                    <button onclick="adminUser('reset')" style="padding: 10px; font-size: 12px; background: #3498db;">Reset Pass</button>
+                    <button onclick="adminUser('delete')" style="padding: 10px; font-size: 12px; background: #e74c3c;">Delete User</button>
                 </div>
             </div>
 
             <!-- Chore Management -->
-            <div style="background: rgba(255,255,255,0.6); padding: 10px; border-radius: 10px; text-align: left;">
+            <div style="background: rgba(255,255,255,0.6); padding: 15px; border-radius: 12px; text-align: left;">
                 <h4 style="margin: 0 0 10px 0; color: #333;">🧹 Manage Work</h4>
                 
                 <div style="display: flex; gap: 5px; margin-bottom: 10px;">
-                    <input type="text" id="newChoreName" placeholder="Work Name" style="padding: 8px; width: 60%;">
-                    <input type="number" id="newChoreAmount" placeholder="₹" style="padding: 8px; width: 40%;">
+                    <input type="text" id="newChoreName" placeholder="Work Name" style="padding: 10px; width: 65%; font-size: 14px;">
+                    <input type="number" id="newChoreAmount" placeholder="₹" style="padding: 10px; width: 35%; font-size: 14px;">
                 </div>
-                <button onclick="adminChore('add')" style="padding: 8px; font-size: 14px; margin-bottom: 10px;">Add Work</button>
+                <button onclick="adminChore('add')" style="padding: 10px; font-size: 14px; margin-bottom: 15px;">Add Work</button>
                 
-                <select id="adminChoreSelect" style="width: 100%; padding: 8px; margin-bottom: 5px; border-radius: 8px;"><option>Loading...</option></select>
-                
-                <div style="display: flex; gap: 5px;">
-                    <button onclick="adminChore('edit')" style="padding: 8px; font-size: 12px; background: #f39c12;">Edit Work</button>
-                    <button onclick="adminChore('delete')" style="padding: 8px; font-size: 12px; background: #e74c3c;">Delete Work</button>
+                <!-- CUSTOM ADMIN CHORE DROPDOWN -->
+                <div class="custom-dropdown">
+                    <button type="button" class="dropdown-btn" id="adminChoreSelectBtn" style="padding: 12px; font-size: 14px;" onclick="toggleDropdown('adminChoreOptions')">Select work to edit/delete...</button>
+                    <div class="dropdown-content" id="adminChoreOptions"></div>
+                    <input type="hidden" id="adminChoreSelect">
+                    <input type="hidden" id="adminChoreSelectAmount">
                 </div>
-            </div>
-
-            <!-- Custom Edit Modal (Full Screen & Clean) -->
-            <div id="custom-edit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-gradient); z-index: 100; justify-content: center; align-items: center;">
-                <div style="background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.5); padding: 35px 25px; border-radius: 24px; width: 85%; max-width: 340px; text-align: center; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);">
-                    <h3 style="margin-top: 0; margin-bottom: 20px; color: #2c3e50; font-size: 24px;">Edit Work</h3>
-                    <input type="hidden" id="editOldName">
-                    <input type="text" id="editNewName" placeholder="New Name" style="margin-bottom: 15px;">
-                    <input type="number" id="editNewAmount" placeholder="New Amount (₹)" style="margin-bottom: 25px;">
-                    <div style="display: flex; gap: 15px;">
-                        <button onclick="saveEditedChore()" style="background: #27ae60;">SAVE</button>
-                        <button onclick="closeEditModal()" style="background: #7f8fa6; box-shadow: none;">CANCEL</button>
-                    </div>
+                
+                <div style="display: flex; gap: 5px; margin-top: 10px;">
+                    <button onclick="adminChore('edit')" style="padding: 10px; font-size: 12px; background: #f39c12;">Edit Work</button>
+                    <button onclick="adminChore('delete')" style="padding: 10px; font-size: 12px; background: #e74c3c;">Delete Work</button>
                 </div>
             </div>
 
             <button onclick="goBackToDashboard()" class="back-btn" style="margin-top: 15px;">BACK TO DASHBOARD</button>
+        </div>
+    </div>
+
+    <!-- Custom Edit Modal (Full Screen & Clean) -->
+    <div id="custom-edit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-gradient); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="login-box" style="width: 85%; max-width: 340px; animation: popIn 0.3s ease-out forwards;">
+            <h3 style="margin-top: 0; margin-bottom: 20px; color: #2c3e50; font-size: 24px;">Edit Work</h3>
+            <input type="hidden" id="editOldName">
+            <input type="text" id="editNewName" placeholder="New Name" style="margin-bottom: 15px;">
+            <input type="number" id="editNewAmount" placeholder="New Amount (₹)" style="margin-bottom: 25px;">
+            <div style="display: flex; gap: 15px;">
+                <button onclick="saveEditedChore()" style="background: #27ae60;">SAVE</button>
+                <button onclick="closeEditModal()" style="background: #7f8fa6; box-shadow: none;">CANCEL</button>
+            </div>
         </div>
     </div>
 
