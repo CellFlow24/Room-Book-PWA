@@ -865,10 +865,20 @@ document.getElementById("chatInput").addEventListener("keypress", function(event
     if (event.key === "Enter") sendChatMessage();
 });
 
-// Automatically scroll to the bottom when the virtual keyboard opens
-document.getElementById("chatInput").addEventListener("focus", function() {
-    setTimeout(() => {
-        const chatBox = document.getElementById("chat-box");
-        chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
-    }, 300); // 300ms delay allows the Android keyboard to finish sliding up
-});
+// Automatically scroll to the bottom when the virtual keyboard alters the viewport
+if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", () => {
+        if (document.getElementById("chat-screen").style.display === "block") {
+            const chatBox = document.getElementById("chat-box");
+            chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+        }
+    });
+} else {
+    // Fallback for older browsers
+    window.addEventListener("resize", () => {
+        if (document.getElementById("chat-screen").style.display === "block") {
+            const chatBox = document.getElementById("chat-box");
+            chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+        }
+    });
+}
