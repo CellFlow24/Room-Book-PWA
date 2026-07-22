@@ -865,18 +865,20 @@ document.getElementById("chatInput").addEventListener("keypress", function(event
     if (event.key === "Enter") sendChatMessage();
 });
 
-// Automatically scroll to the bottom when the virtual keyboard alters the viewport
+// Automatically shrink screen and scroll to the bottom when the virtual keyboard opens
 if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", () => {
-        if (document.getElementById("chat-screen").style.display === "block") {
-            const chatBox = document.getElementById("chat-box");
-            chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
-        }
-    });
-} else {
-    // Fallback for older browsers
-    window.addEventListener("resize", () => {
-        if (document.getElementById("chat-screen").style.display === "block") {
+        const chatScreen = document.getElementById("chat-screen");
+        
+        if (chatScreen.style.display === "block") {
+            // Force the app to exactly match the new visible screen height
+            chatScreen.style.height = window.visualViewport.height + "px";
+            
+            // Force the browser to stop panning upward
+            window.scrollTo(0, 0); 
+            document.body.scrollTop = 0;
+            
+            // Scroll the chat bubbles to the bottom
             const chatBox = document.getElementById("chat-box");
             chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
         }
