@@ -218,8 +218,36 @@ async function saveExpense() {
 document.querySelector('.button-grid button:nth-child(2)').onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
     document.getElementById("chore-screen").style.display = "block";
-    await loadChores(); // Fetch the dropdown options from Google Sheets
+    await loadChores(); 
+    await loadChoreActiveUsers(); // Load checkboxes
 };
+
+async function loadChoreActiveUsers() {
+    const container = document.getElementById("dynamic-chore-split-users");
+    container.innerHTML = '<p style="font-size: 14px; color: #333;">Loading users...</p>';
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "getActiveUsers" })
+        });
+        const data = await response.json();
+        
+        if (data.status === "success") {
+            container.innerHTML = "";
+            data.users.forEach(user => {
+                // EXCLUDE the person logging the work
+                if (user !== currentUser) {
+                    container.innerHTML += `<label class="split-label"><input type="checkbox" class="chore-split-check" value="${user}" checked> ${user}</label>`;
+                }
+            });
+        } else {
+            container.innerHTML = "Error loading users.";
+        }
+    } catch (error) {
+        container.innerHTML = "Connection failed.";
+    }
+}
 
 async function loadChores() {
     const selectEl = document.getElementById("choreSelect");
@@ -235,7 +263,6 @@ async function loadChores() {
         if (data.status === "success") {
             selectEl.innerHTML = '<option value="">Select Work...</option>';
             data.chores.forEach(chore => {
-                // Store the amount inside the option element so we can retrieve it later
                 selectEl.innerHTML += `<option value="${chore.name}" data-amount="${chore.amount}">${chore.name}</option>`;
             });
         }
@@ -244,7 +271,6 @@ async function loadChores() {
     }
 }
 
-// Update the Amount display when the user selects a different chore
 document.getElementById("choreSelect").addEventListener("change", function() {
     const selectedOption = this.options[this.selectedIndex];
     const amount = selectedOption.getAttribute("data-amount") || 0;
@@ -256,8 +282,15 @@ async function saveChore() {
     const messageEl = document.getElementById("chore-message");
     const selectedOption = selectEl.options[selectEl.selectedIndex];
     
-    if (!selectEl.value) {
-        messageEl.innerText = "Please select a work category.";
+    // Gather all checked users to split with
+    const checkboxes = document.querySelectorAll('.chore-split-check:checked');
+    let splitWith = [];
+    checkboxes.forEach((cb) => {
+        splitWith.push(cb.value);
+    });
+
+    if (!selectEl.value || splitWith.length === 0) {
+        messageEl.innerText = "Please select work and at least one person to pay.";
         return;
     }
 
@@ -268,7 +301,8 @@ async function saveChore() {
         action: "addChore",
         userId: currentUser,
         choreName: selectEl.value,
-        amount: amount
+        amount: amount,
+        splitWith: splitWith.join(", ") // Save who is paying
     };
 
     try {
@@ -351,15 +385,20 @@ document.querySelector('.button-grid button:nth-child(3)').onclick = async () =>
                 const amount = parseFloat(chore.amount) || 0;
                 const earner = chore.doneBy;
                 
+                // Fallback for old chores before the update, or use the new saved split list
+                const splitList = chore.splitWith ? chore.splitWith.split(',').map(s => s.trim()) : users.filter(u => u !== earner);
+                const splitCount = splitList.length;
+                
                 if (users.includes(earner)) {
                     choresEarned[earner] += amount;
-                    balances[earner] += amount; 
+                    balances[earner] += amount; // Earner gets the full amount
                     
-                    const others = users.filter(u => u !== earner);
-                    if (others.length > 0) {
-                        const splitCost = amount / others.length;
-                        others.forEach(person => {
-                            balances[person] -= splitCost;
+                    if (splitCount > 0) {
+                        const splitCost = amount / splitCount;
+                        splitList.forEach(person => {
+                            if (users.includes(person)) {
+                                balances[person] -= splitCost;
+                            }
                         });
                     }
                 }
@@ -449,6 +488,7 @@ document.querySelector('.button-grid button:nth-child(4)').onclick = async () =>
                 data.chores.slice().reverse().forEach(chore => {
                     const d = new Date(chore.date);
                     const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+                    const splitText = chore.splitWith ? `<br>Paid by: ${chore.splitWith}` : "";
                     
                     html += `
                     <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
@@ -457,7 +497,7 @@ document.querySelector('.button-grid button:nth-child(4)').onclick = async () =>
                             <span style="color:#27ae60;">+₹${chore.amount}</span>
                         </div>
                         <div style="font-size:12px; color:#7f8fa6; margin-top:4px;">
-                            ${dateStr} | Done by: <b>${chore.doneBy}</b>
+                            ${dateStr} | Done by: <b>${chore.doneBy}</b> ${splitText}
                         </div>
                     </div>`;
                 });
