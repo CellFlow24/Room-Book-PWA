@@ -13,7 +13,7 @@
     <div id="login-screen" class="screen">
         <div class="login-box">
             <img src="logo.png" alt="Room Book Logo" class="app-logo">
-            <h1 class="app-title">Room Book</h1>
+            <h1 class="app-title">Mess Khata</h1>
             <input type="text" id="userId" placeholder="User ID">
             <input type="password" id="password" placeholder="Password">
             <button onclick="login()">LOGIN</button>
@@ -117,6 +117,12 @@
         <div class="login-box">
             <h2 class="app-title">History</h2>
             
+            <!-- NEW TAB BUTTONS -->
+            <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+                <button id="tab-btn-expenses" onclick="switchHistoryTab('expenses')" style="padding: 12px; font-size: 15px; background: var(--accent); color: white; border-radius: 12px; box-shadow: none;">💸 Expenses</button>
+                <button id="tab-btn-chores" onclick="switchHistoryTab('chores')" style="padding: 12px; font-size: 15px; background: rgba(255,255,255,0.6); color: #333; border-radius: 12px; box-shadow: none;">🧹 Work Log</button>
+            </div>
+
             <div id="review-content" style="background: rgba(255,255,255,0.8); padding: 15px; border-radius: 12px; color: #2c3e50; text-align: left; max-height: 400px; overflow-y: auto;">
                 Loading history...
             </div>
