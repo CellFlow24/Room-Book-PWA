@@ -165,16 +165,16 @@
                 </div>
             </div>
 
-            <!-- Custom Edit Modal (Hidden by default) -->
-            <div id="custom-edit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 100; justify-content: center; align-items: center;">
-                <div style="background: var(--bg-gradient); padding: 25px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.4);">
-                    <h3 style="margin-top: 0; color: #2c3e50;">Edit Work</h3>
+            <!-- Custom Edit Modal (Full Screen & Clean) -->
+            <div id="custom-edit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-gradient); z-index: 100; justify-content: center; align-items: center;">
+                <div style="background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.5); padding: 35px 25px; border-radius: 24px; width: 85%; max-width: 340px; text-align: center; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);">
+                    <h3 style="margin-top: 0; margin-bottom: 20px; color: #2c3e50; font-size: 24px;">Edit Work</h3>
                     <input type="hidden" id="editOldName">
-                    <input type="text" id="editNewName" placeholder="New Name" style="margin-bottom: 10px; border: 2px solid rgba(255,255,255,0.6); background: rgba(255,255,255,0.9); color: #333;">
-                    <input type="number" id="editNewAmount" placeholder="New Amount (₹)" style="margin-bottom: 15px; border: 2px solid rgba(255,255,255,0.6); background: rgba(255,255,255,0.9); color: #333;">
-                    <div style="display: flex; gap: 10px;">
+                    <input type="text" id="editNewName" placeholder="New Name" style="margin-bottom: 15px;">
+                    <input type="number" id="editNewAmount" placeholder="New Amount (₹)" style="margin-bottom: 25px;">
+                    <div style="display: flex; gap: 15px;">
                         <button onclick="saveEditedChore()" style="background: #27ae60;">SAVE</button>
-                        <button onclick="closeEditModal()" style="background: #e74c3c;">CANCEL</button>
+                        <button onclick="closeEditModal()" style="background: #7f8fa6; box-shadow: none;">CANCEL</button>
                     </div>
                 </div>
             </div>
