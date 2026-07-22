@@ -447,12 +447,22 @@ document.querySelector('.button-grid button:nth-child(3)').onclick = async () =>
 
 // --- Expense Review Logic ---
 
+let currentHistoryData = { expenses: [], chores: [] };
+let currentHistoryTab = 'expenses';
+
 document.querySelector('.button-grid button:nth-child(4)').onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
     document.getElementById("expense-review-screen").style.display = "block";
     
     const contentEl = document.getElementById("review-content");
     contentEl.innerHTML = "Fetching history from server...";
+
+    // Reset tabs visually to default (Expenses) when opening
+    document.getElementById("tab-btn-expenses").style.background = "var(--accent)";
+    document.getElementById("tab-btn-expenses").style.color = "white";
+    document.getElementById("tab-btn-chores").style.background = "rgba(255,255,255,0.6)";
+    document.getElementById("tab-btn-chores").style.color = "#333";
+    currentHistoryTab = 'expenses';
 
     try {
         const response = await fetch(API_URL, {
@@ -462,53 +472,8 @@ document.querySelector('.button-grid button:nth-child(4)').onclick = async () =>
         const data = await response.json();
 
         if (data.status === "success") {
-            let html = `<h4 style="margin-top:0; border-bottom: 2px solid #2c3e50; padding-bottom: 5px;">💸 Expenses</h4>`;
-            
-            if (data.expenses.length === 0) {
-                html += `<p style="font-size: 14px;">No expenses logged yet.</p>`;
-            } else {
-                data.expenses.slice().reverse().forEach(exp => {
-                    const d = new Date(exp.date);
-                    const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-                    
-                    html += `
-                    <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                        <div style="display:flex; justify-content:space-between; font-weight:bold; color:#333;">
-                            <span>${exp.item}</span>
-                            <span style="color:#e74c3c;">₹${exp.amount}</span>
-                        </div>
-                        <div style="font-size:12px; color:#7f8fa6; margin-top:4px;">
-                            ${dateStr} | Paid by: <b>${exp.paidBy}</b> <br>
-                            Split: ${exp.splitWith}
-                        </div>
-                    </div>`;
-                });
-            }
-
-            html += `<h4 style="margin-top:20px; border-bottom: 2px solid #2c3e50; padding-bottom: 5px;">🧹 Work Log</h4>`;
-            
-            if (data.chores.length === 0) {
-                html += `<p style="font-size: 14px;">No work logged yet.</p>`;
-            } else {
-                data.chores.slice().reverse().forEach(chore => {
-                    const d = new Date(chore.date);
-                    const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-                    const splitText = chore.splitWith ? `<br>Paid by: ${chore.splitWith}` : "";
-                    
-                    html += `
-                    <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                        <div style="display:flex; justify-content:space-between; font-weight:bold; color:#333;">
-                            <span>${chore.item}</span>
-                            <span style="color:#27ae60;">+₹${chore.amount}</span>
-                        </div>
-                        <div style="font-size:12px; color:#7f8fa6; margin-top:4px;">
-                            ${dateStr} | Done by: <b>${chore.doneBy}</b> ${splitText}
-                        </div>
-                    </div>`;
-                });
-            }
-
-            contentEl.innerHTML = html;
+            currentHistoryData = data; // Store data globally for switching tabs
+            renderHistoryContent();
         } else {
             contentEl.innerHTML = "Error loading history.";
         }
@@ -516,6 +481,74 @@ document.querySelector('.button-grid button:nth-child(4)').onclick = async () =>
         contentEl.innerHTML = "Connection failed.";
     }
 };
+
+// Switch Tab Logic
+function switchHistoryTab(tab) {
+    currentHistoryTab = tab;
+    if (tab === 'expenses') {
+        document.getElementById("tab-btn-expenses").style.background = "var(--accent)";
+        document.getElementById("tab-btn-expenses").style.color = "white";
+        document.getElementById("tab-btn-chores").style.background = "rgba(255,255,255,0.6)";
+        document.getElementById("tab-btn-chores").style.color = "#333";
+    } else {
+        document.getElementById("tab-btn-chores").style.background = "var(--accent)";
+        document.getElementById("tab-btn-chores").style.color = "white";
+        document.getElementById("tab-btn-expenses").style.background = "rgba(255,255,255,0.6)";
+        document.getElementById("tab-btn-expenses").style.color = "#333";
+    }
+    renderHistoryContent();
+}
+
+// Generate the HTML based on the selected tab
+function renderHistoryContent() {
+    const contentEl = document.getElementById("review-content");
+    let html = '';
+
+    if (currentHistoryTab === 'expenses') {
+        if (currentHistoryData.expenses.length === 0) {
+            html = `<p style="font-size: 14px;">No expenses logged yet.</p>`;
+        } else {
+            currentHistoryData.expenses.slice().reverse().forEach(exp => {
+                const d = new Date(exp.date);
+                const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+                
+                html += `
+                <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; color:#333;">
+                        <span>${exp.item}</span>
+                        <span style="color:#e74c3c;">₹${exp.amount}</span>
+                    </div>
+                    <div style="font-size:12px; color:#7f8fa6; margin-top:4px;">
+                        ${dateStr} | Paid by: <b>${exp.paidBy}</b> <br>
+                        Split: ${exp.splitWith}
+                    </div>
+                </div>`;
+            });
+        }
+    } else {
+        if (currentHistoryData.chores.length === 0) {
+            html = `<p style="font-size: 14px;">No work logged yet.</p>`;
+        } else {
+            currentHistoryData.chores.slice().reverse().forEach(chore => {
+                const d = new Date(chore.date);
+                const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+                const splitText = chore.splitWith ? `<br>Paid by: ${chore.splitWith}` : "";
+                
+                html += `
+                <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; color:#333;">
+                        <span>${chore.item}</span>
+                        <span style="color:#27ae60;">+₹${chore.amount}</span>
+                    </div>
+                    <div style="font-size:12px; color:#7f8fa6; margin-top:4px;">
+                        ${dateStr} | Done by: <b>${chore.doneBy}</b> ${splitText}
+                    </div>
+                </div>`;
+            });
+        }
+    }
+    contentEl.innerHTML = html;
+}
 
 // --- Admin Logic (Using Custom Dropdowns) ---
 
