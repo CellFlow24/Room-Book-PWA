@@ -4,6 +4,24 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxSQaPQVD0lhiZgB7q7TZy9
 let currentUser = "";
 let currentPassword = "";
 
+// --- Global Custom Dropdown Logic ---
+function toggleDropdown(id) {
+    document.querySelectorAll('.dropdown-content').forEach(el => {
+        if (el.id !== id) el.style.display = 'none';
+    });
+    const el = document.getElementById(id);
+    el.style.display = el.style.display === "block" ? "none" : "block";
+}
+
+window.onclick = function(event) {
+    if (!event.target.matches('.dropdown-btn')) {
+        document.querySelectorAll('.dropdown-content').forEach(el => {
+            el.style.display = 'none';
+        });
+    }
+}
+
+// --- Login Logic ---
 async function login() {
     const userIdInput = document.getElementById("userId").value;
     const passwordInput = document.getElementById("password").value;
@@ -35,7 +53,6 @@ async function login() {
             
             document.getElementById("login-screen").style.display = "none";
 
-            // Check if user needs to reset the default "1234" password
             if (data.needsPasswordReset) {
                 document.getElementById("reset-screen").style.display = "block";
             } else {
@@ -90,11 +107,10 @@ function showDashboard(role) {
     document.getElementById("dashboard-screen").style.display = "block";
     document.getElementById("welcome-text").innerText = `Welcome, ${currentUser}`;
     
-    // Check role to show/hide specific buttons
     if (role === "Admin") {
         document.getElementById("admin-btn").style.display = "block";
-        document.querySelector('.button-grid button:nth-child(1)').style.display = "none"; // Hide EXPENCE
-        document.querySelector('.button-grid button:nth-child(2)').style.display = "none"; // Hide COOKING & CLEANING
+        document.querySelector('.button-grid button:nth-child(1)').style.display = "none"; 
+        document.querySelector('.button-grid button:nth-child(2)').style.display = "none"; 
     } else {
         document.getElementById("admin-btn").style.display = "none";
         document.querySelector('.button-grid button:nth-child(1)').style.display = "block"; 
@@ -103,11 +119,12 @@ function showDashboard(role) {
 }
 
 function goBackToDashboard() {
+    document.querySelectorAll('.dropdown-content').forEach(el => el.style.display = 'none');
     document.getElementById("expense-screen").style.display = "none";
     document.getElementById("chore-screen").style.display = "none";
     document.getElementById("pay-details-screen").style.display = "none";
     document.getElementById("expense-review-screen").style.display = "none";
-    document.getElementById("admin-screen").style.display = "none"; // Hide admin screen
+    document.getElementById("admin-screen").style.display = "none"; 
     document.getElementById("dashboard-screen").style.display = "block";
     
     document.getElementById("expense-message").innerText = "";
@@ -127,7 +144,6 @@ function logout() {
 
 // --- Expense Tracking Logic ---
 
-// Connect the 1st button (EXPENCE)
 document.querySelector('.button-grid button:nth-child(1)').onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
     document.getElementById("expense-screen").style.display = "block";
@@ -163,7 +179,6 @@ async function saveExpense() {
     const amount = document.getElementById("expenseAmount").value;
     const messageEl = document.getElementById("expense-message");
 
-    // Gather all checked users to split with
     const checkboxes = document.querySelectorAll('.split-check:checked');
     let splitWith = [];
     checkboxes.forEach((cb) => {
@@ -193,16 +208,14 @@ async function saveExpense() {
         const data = await response.json();
 
         if (data.status === "success") {
-            // Clear the form
             document.getElementById("expenseFor").value = "";
             document.getElementById("expenseAmount").value = "";
-            messageEl.style.color = "#27ae60"; // Green success text
+            messageEl.style.color = "#27ae60"; 
             messageEl.innerText = "Expense saved successfully!";
             
-            // Automatically go back to dashboard after 1.5 seconds
             setTimeout(() => {
                 goBackToDashboard();
-                messageEl.style.color = "#d63031"; // Reset color to red for future errors
+                messageEl.style.color = "#d63031"; 
             }, 1500); 
         } else {
             messageEl.innerText = data.message;
@@ -212,14 +225,13 @@ async function saveExpense() {
     }
 }
 
-// --- Chore Tracking Logic ---
+// --- Chore Tracking Logic (Using Custom Dropdown) ---
 
-// Connect the 2nd button (COOKING & CLEANING)
 document.querySelector('.button-grid button:nth-child(2)').onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
     document.getElementById("chore-screen").style.display = "block";
     await loadChores(); 
-    await loadChoreActiveUsers(); // Load checkboxes
+    await loadChoreActiveUsers(); 
 };
 
 async function loadChoreActiveUsers() {
@@ -236,7 +248,6 @@ async function loadChoreActiveUsers() {
         if (data.status === "success") {
             container.innerHTML = "";
             data.users.forEach(user => {
-                // EXCLUDE the person logging the work
                 if (user !== currentUser) {
                     container.innerHTML += `<label class="split-label"><input type="checkbox" class="chore-split-check" value="${user}" checked> ${user}</label>`;
                 }
@@ -250,8 +261,11 @@ async function loadChoreActiveUsers() {
 }
 
 async function loadChores() {
-    const selectEl = document.getElementById("choreSelect");
-    selectEl.innerHTML = '<option value="">Loading...</option>';
+    const optionsEl = document.getElementById("choreOptions");
+    document.getElementById("choreSelectBtn").innerText = "Select Work...";
+    document.getElementById("choreSelect").value = "";
+    
+    optionsEl.innerHTML = '<div class="dropdown-item">Loading...</div>';
     
     try {
         const response = await fetch(API_URL, {
@@ -261,48 +275,48 @@ async function loadChores() {
         const data = await response.json();
         
         if (data.status === "success") {
-            selectEl.innerHTML = '<option value="">Select Work...</option>';
+            optionsEl.innerHTML = '';
             data.chores.forEach(chore => {
-                selectEl.innerHTML += `<option value="${chore.name}" data-amount="${chore.amount}">${chore.name}</option>`;
+                optionsEl.innerHTML += `<div class="dropdown-item" onclick="selectCustomChore('${chore.name}', ${chore.amount})">${chore.name}</div>`;
             });
         }
     } catch (error) {
-        selectEl.innerHTML = '<option value="">Error loading</option>';
+        optionsEl.innerHTML = '<div class="dropdown-item">Error loading</div>';
     }
 }
 
-document.getElementById("choreSelect").addEventListener("change", function() {
-    const selectedOption = this.options[this.selectedIndex];
-    const amount = selectedOption.getAttribute("data-amount") || 0;
+function selectCustomChore(name, amount) {
+    document.getElementById("choreSelect").value = name;
+    document.getElementById("choreSelectAmount").value = amount;
+    document.getElementById("choreSelectBtn").innerText = name;
     document.getElementById("choreAmountDisplay").innerText = `Amount: ₹${amount}`;
-});
+    document.getElementById("choreOptions").style.display = "none";
+}
 
 async function saveChore() {
-    const selectEl = document.getElementById("choreSelect");
+    const selectedName = document.getElementById("choreSelect").value;
     const messageEl = document.getElementById("chore-message");
-    const selectedOption = selectEl.options[selectEl.selectedIndex];
     
-    // Gather all checked users to split with
     const checkboxes = document.querySelectorAll('.chore-split-check:checked');
     let splitWith = [];
     checkboxes.forEach((cb) => {
         splitWith.push(cb.value);
     });
 
-    if (!selectEl.value || splitWith.length === 0) {
+    if (!selectedName || splitWith.length === 0) {
         messageEl.innerText = "Please select work and at least one person to pay.";
         return;
     }
 
     messageEl.innerText = "Saving to database...";
-    const amount = parseFloat(selectedOption.getAttribute("data-amount"));
+    const amount = parseFloat(document.getElementById("choreSelectAmount").value);
 
     const payload = {
         action: "addChore",
         userId: currentUser,
-        choreName: selectEl.value,
+        choreName: selectedName,
         amount: amount,
-        splitWith: splitWith.join(", ") // Save who is paying
+        splitWith: splitWith.join(", ") 
     };
 
     try {
@@ -318,8 +332,8 @@ async function saveChore() {
             setTimeout(() => {
                 goBackToDashboard();
                 messageEl.style.color = "#d63031";
-                selectEl.selectedIndex = 0;
                 document.getElementById("choreAmountDisplay").innerText = "Amount: ₹0";
+                document.getElementById("choreSelectBtn").innerText = "Select Work...";
             }, 1500); 
         } else {
             messageEl.innerText = data.message;
@@ -331,7 +345,6 @@ async function saveChore() {
 
 // --- Pay Details Logic ---
 
-// Connect the 3rd button (Pay Detels)
 document.querySelector('.button-grid button:nth-child(3)').onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
     document.getElementById("pay-details-screen").style.display = "block";
@@ -347,20 +360,17 @@ document.querySelector('.button-grid button:nth-child(3)').onclick = async () =>
         const data = await response.json();
 
         if (data.status === "success") {
-            // The Math Engine (Now 100% Dynamic!)
             const users = data.activeUsers; 
             let balances = {};
             let totalPaid = {};
             let choresEarned = {};
             
-            // Automatically set up accounts for all active users
             users.forEach(u => {
                 balances[u] = 0;
                 totalPaid[u] = 0;
                 choresEarned[u] = 0;
             });
 
-            // 1. Calculate Expenses
             data.expenses.forEach(exp => {
                 const amount = parseFloat(exp.amount) || 0;
                 const payer = exp.paidBy;
@@ -380,18 +390,16 @@ document.querySelector('.button-grid button:nth-child(3)').onclick = async () =>
                 }
             });
 
-            // 2. Calculate Chores (Cooking & Cleaning)
             data.chores.forEach(chore => {
                 const amount = parseFloat(chore.amount) || 0;
                 const earner = chore.doneBy;
                 
-                // Fallback for old chores before the update, or use the new saved split list
                 const splitList = chore.splitWith ? chore.splitWith.split(',').map(s => s.trim()) : users.filter(u => u !== earner);
                 const splitCount = splitList.length;
                 
                 if (users.includes(earner)) {
                     choresEarned[earner] += amount;
-                    balances[earner] += amount; // Earner gets the full amount
+                    balances[earner] += amount; 
                     
                     if (splitCount > 0) {
                         const splitCost = amount / splitCount;
@@ -404,7 +412,6 @@ document.querySelector('.button-grid button:nth-child(3)').onclick = async () =>
                 }
             });
 
-            // 3. Build the UI Cards
             let html = `<h3 style="margin-top:0; text-align:center; color:#2c3e50;">Balance Sheet</h3>`;
             
             users.forEach(user => {
@@ -440,7 +447,6 @@ document.querySelector('.button-grid button:nth-child(3)').onclick = async () =>
 
 // --- Expense Review Logic ---
 
-// Connect the 4th button (EXPENCE REVIEW)
 document.querySelector('.button-grid button:nth-child(4)').onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
     document.getElementById("expense-review-screen").style.display = "block";
@@ -461,7 +467,6 @@ document.querySelector('.button-grid button:nth-child(4)').onclick = async () =>
             if (data.expenses.length === 0) {
                 html += `<p style="font-size: 14px;">No expenses logged yet.</p>`;
             } else {
-                // Reverse array to show newest first
                 data.expenses.slice().reverse().forEach(exp => {
                     const d = new Date(exp.date);
                     const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
@@ -512,7 +517,7 @@ document.querySelector('.button-grid button:nth-child(4)').onclick = async () =>
     }
 };
 
-// --- Admin Logic ---
+// --- Admin Logic (Using Custom Dropdowns) ---
 
 document.getElementById("admin-btn").onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
@@ -521,8 +526,14 @@ document.getElementById("admin-btn").onclick = async () => {
 };
 
 async function loadAdminData() {
-    const userSelect = document.getElementById("adminUserSelect");
-    const choreSelect = document.getElementById("adminChoreSelect");
+    const userOptions = document.getElementById("adminUserOptions");
+    const choreOptions = document.getElementById("adminChoreOptions");
+    
+    document.getElementById("adminUserSelectBtn").innerText = "Select a user...";
+    document.getElementById("adminUserSelect").value = "";
+    
+    document.getElementById("adminChoreSelectBtn").innerText = "Select work to edit/delete...";
+    document.getElementById("adminChoreSelect").value = "";
     
     try {
         const response = await fetch(API_URL, {
@@ -532,19 +543,32 @@ async function loadAdminData() {
         const data = await response.json();
 
         if (data.status === "success") {
-            userSelect.innerHTML = '<option value="">Select a user...</option>';
+            userOptions.innerHTML = '';
             data.users.forEach(user => {
-                userSelect.innerHTML += `<option value="${user}">${user}</option>`;
+                userOptions.innerHTML += `<div class="dropdown-item" onclick="selectAdminUser('${user}')">${user}</div>`;
             });
 
-            choreSelect.innerHTML = '<option value="">Select work to edit/delete...</option>';
+            choreOptions.innerHTML = '';
             data.chores.forEach(chore => {
-                choreSelect.innerHTML += `<option value="${chore.name}" data-amount="${chore.amount}">${chore.name} (₹${chore.amount})</option>`;
+                choreOptions.innerHTML += `<div class="dropdown-item" onclick="selectAdminChore('${chore.name}', ${chore.amount})">${chore.name} (₹${chore.amount})</div>`;
             });
         }
     } catch (error) {
         document.getElementById("admin-message").innerText = "Error loading data.";
     }
+}
+
+function selectAdminUser(name) {
+    document.getElementById("adminUserSelect").value = name;
+    document.getElementById("adminUserSelectBtn").innerText = name;
+    document.getElementById("adminUserOptions").style.display = "none";
+}
+
+function selectAdminChore(name, amount) {
+    document.getElementById("adminChoreSelect").value = name;
+    document.getElementById("adminChoreSelectAmount").value = amount;
+    document.getElementById("adminChoreSelectBtn").innerText = `${name} (₹${amount})`;
+    document.getElementById("adminChoreOptions").style.display = "none";
 }
 
 async function adminUser(subAction) {
@@ -576,14 +600,13 @@ async function adminUser(subAction) {
         
         if (data.status === "success") {
             document.getElementById("newUsername").value = "";
-            await loadAdminData(); // Refresh dropdowns
+            await loadAdminData(); 
         }
     } catch (error) {
         messageEl.innerText = "Server connection failed.";
     }
 }
 
-// --- Custom Edit Modal Controls ---
 function closeEditModal() {
     document.getElementById("custom-edit-modal").style.display = "none";
 }
@@ -625,7 +648,6 @@ async function saveEditedChore() {
     }
 }
 
-// --- Admin Work Logic ---
 async function adminChore(subAction) {
     const messageEl = document.getElementById("admin-message");
     let payload = { action: "adminChoreAction", subAction: subAction };
@@ -635,23 +657,23 @@ async function adminChore(subAction) {
         payload.amount = parseFloat(document.getElementById("newChoreAmount").value);
         if (!payload.choreName || !payload.amount) return messageEl.innerText = "Enter work name and amount.";
     } else {
-        const select = document.getElementById("adminChoreSelect");
-        if (!select.value) return messageEl.innerText = "Select work from the list first.";
+        const selectedName = document.getElementById("adminChoreSelect").value;
+        const selectedAmount = document.getElementById("adminChoreSelectAmount").value;
+        
+        if (!selectedName) return messageEl.innerText = "Select work from the list first.";
         
         if (subAction === "delete") {
-            payload.choreName = select.value;
+            payload.choreName = selectedName;
             if (!confirm(`Are you sure you want to delete ${payload.choreName}?`)) return;
         } 
         
         if (subAction === "edit") {
-            // OPEN CUSTOM MODAL INSTEAD OF BROWSER PROMPT
-            const selectedOpt = select.options[select.selectedIndex];
-            document.getElementById("editOldName").value = select.value;
-            document.getElementById("editNewName").value = select.value;
-            document.getElementById("editNewAmount").value = selectedOpt.getAttribute("data-amount");
+            document.getElementById("editOldName").value = selectedName;
+            document.getElementById("editNewName").value = selectedName;
+            document.getElementById("editNewAmount").value = selectedAmount;
             
             document.getElementById("custom-edit-modal").style.display = "flex";
-            return; // Stop execution here, wait for modal buttons
+            return; 
         }
     }
 
