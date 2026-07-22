@@ -3,6 +3,12 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxSQaPQVD0lhiZgB7q7TZy9
 
 let currentUser = "";
 let currentPassword = "";
+let currentRole = ""; 
+
+// Chat Globals
+let chatPollingInterval;
+let dashboardPollingInterval;
+let lastKnownChatCount = parseInt(localStorage.getItem("roombook_chat_count")) || 0;
 
 // --- Global Custom Dropdown Logic ---
 function toggleDropdown(id) {
@@ -50,6 +56,7 @@ async function login() {
         if (data.status === "success") {
             currentUser = userIdInput;
             currentPassword = passwordInput;
+            currentRole = data.role;
             
             document.getElementById("login-screen").style.display = "none";
 
@@ -116,17 +123,29 @@ function showDashboard(role) {
         document.querySelector('.button-grid button:nth-child(1)').style.display = "block"; 
         document.querySelector('.button-grid button:nth-child(2)').style.display = "block"; 
     }
+
+    // Start background check for new messages every 10 seconds
+    checkNewMessagesBadge();
+    dashboardPollingInterval = setInterval(checkNewMessagesBadge, 10000);
 }
 
 function goBackToDashboard() {
+    // Stop chat polling to save battery when leaving the chat screen!
+    if (chatPollingInterval) clearInterval(chatPollingInterval);
+    
     document.querySelectorAll('.dropdown-content').forEach(el => el.style.display = 'none');
     document.getElementById("expense-screen").style.display = "none";
     document.getElementById("chore-screen").style.display = "none";
     document.getElementById("pay-details-screen").style.display = "none";
     document.getElementById("expense-review-screen").style.display = "none";
     document.getElementById("admin-screen").style.display = "none"; 
-    document.getElementById("dashboard-screen").style.display = "block";
+    document.getElementById("chat-screen").style.display = "none"; 
     
+    // Restart dashboard badge check
+    checkNewMessagesBadge();
+    if (!dashboardPollingInterval) dashboardPollingInterval = setInterval(checkNewMessagesBadge, 10000);
+    
+    document.getElementById("dashboard-screen").style.display = "block";
     document.getElementById("expense-message").innerText = "";
     document.getElementById("chore-message").innerText = "";
     document.getElementById("admin-message").innerText = "";
@@ -732,3 +751,116 @@ async function adminChore(subAction) {
         messageEl.innerText = "Server connection failed.";
     }
 }
+
+// --- Live Chat Engine ---
+
+document.getElementById("chat-nav-btn").onclick = () => {
+    // Stop dashboard polling
+    if (dashboardPollingInterval) clearInterval(dashboardPollingInterval);
+    
+    document.getElementById("dashboard-screen").style.display = "none";
+    document.getElementById("chat-screen").style.display = "block";
+    
+    // Hide the red badge immediately
+    document.getElementById("chat-badge").style.display = "none";
+    
+    loadChatMessages();
+    // Start fast polling (every 3.5 seconds) while inside the room
+    chatPollingInterval = setInterval(loadChatMessages, 3500); 
+};
+
+async function checkNewMessagesBadge() {
+    try {
+        const response = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "getChat" }) });
+        const data = await response.json();
+        if (data.status === "success" && data.totalMessages > lastKnownChatCount) {
+            document.getElementById("chat-badge").style.display = "inline-block";
+        }
+    } catch (error) { console.log("Badge check failed"); }
+}
+
+async function loadChatMessages() {
+    try {
+        const response = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "getChat" }) });
+        const data = await response.json();
+        
+        if (data.status === "success") {
+            // Update local memory so we don't trigger fake alerts later
+            lastKnownChatCount = data.totalMessages;
+            localStorage.setItem("roombook_chat_count", lastKnownChatCount);
+            
+            const chatBox = document.getElementById("chat-box");
+            
+            // Only re-render if the number of messages changed to prevent screen flickering
+            const currentElementCount = chatBox.querySelectorAll('.chat-bubble').length;
+            if (data.messages.length === currentElementCount && currentElementCount !== 0) return;
+
+            let html = '';
+            data.messages.forEach(msg => {
+                const d = new Date(msg.date);
+                let timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                // Magical Regex to find @names and wrap them in the highlight CSS class!
+                let formattedText = msg.message.replace(/(@\w+)/g, '<span class="tag-highlight">$1</span>');
+
+                if (msg.role === "Admin") {
+                    html += `
+                    <div class="chat-bubble msg-admin">
+                        <span style="font-size: 18px;">📢</span><br>
+                        ${formattedText}
+                        <div style="font-size: 10px; opacity: 0.8; margin-top: 5px; font-weight: normal;">${timeStr}</div>
+                    </div>`;
+                } else if (msg.sender === currentUser) {
+                    html += `
+                    <div class="chat-bubble msg-mine">
+                        <span class="chat-meta">${timeStr}</span>
+                        ${formattedText}
+                    </div>`;
+                } else {
+                    html += `
+                    <div class="chat-bubble msg-other">
+                        <span class="chat-meta">${msg.sender} • ${timeStr}</span>
+                        ${formattedText}
+                    </div>`;
+                }
+            });
+
+            chatBox.innerHTML = html;
+            // Smoothly auto-scroll to the absolute bottom of the chat
+            chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+        }
+    } catch (error) { console.log("Chat load failed"); }
+}
+
+async function sendChatMessage() {
+    const inputEl = document.getElementById("chatInput");
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    inputEl.value = ""; // Clear immediately for snappy feel
+    
+    // Optimistically scroll to bottom
+    const chatBox = document.getElementById("chat-box");
+    chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+
+    try {
+        await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "sendChat",
+                userId: currentUser,
+                role: currentRole, // Passes "User" or "Admin"
+                message: text
+            })
+        });
+        // Force an immediate reload of chat box
+        loadChatMessages();
+    } catch (error) {
+        alert("Failed to send message.");
+    }
+}
+
+// Allow pressing "Enter" key on phone keyboard to send
+document.getElementById("chatInput").addEventListener("keypress", function(event) {
+    if (event.key === "Enter") sendChatMessage();
+});
