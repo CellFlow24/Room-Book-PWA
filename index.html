@@ -85,12 +85,19 @@
             
             <p id="choreAmountDisplay" style="color: #2c3e50; font-weight: bold; margin-bottom: 15px;">Amount: ₹0</p>
 
+            <div class="split-section">
+                <p class="split-title">Who pays for this?</p>
+                <div id="dynamic-chore-split-users">
+                    <p style="font-size: 14px; color: #333;">Loading users...</p>
+                </div>
+            </div>
+
             <button onclick="saveChore()">SAVE WORK</button>
             <button onclick="goBackToDashboard()" class="back-btn" style="margin-top: 10px;">BACK</button>
             <p id="chore-message" class="error-text"></p>
         </div>
     </div>
-
+    
     <!-- PAY DETAILS SCREEN -->
     <div id="pay-details-screen" class="screen" style="display: none;">
         <div class="login-box">
