@@ -765,8 +765,8 @@ document.getElementById("chat-nav-btn").onclick = () => {
     document.getElementById("chat-badge").style.display = "none";
     
     loadChatMessages();
-    // Start fast polling (every 3.5 seconds) while inside the room
-    chatPollingInterval = setInterval(loadChatMessages, 3500); 
+    // Fast polling (every 1.5 seconds) for a real-time, smooth feel
+    chatPollingInterval = setInterval(loadChatMessages, 1500); 
 };
 
 async function checkNewMessagesBadge() {
@@ -863,4 +863,12 @@ async function sendChatMessage() {
 // Allow pressing "Enter" key on phone keyboard to send
 document.getElementById("chatInput").addEventListener("keypress", function(event) {
     if (event.key === "Enter") sendChatMessage();
+});
+
+// Automatically scroll to the bottom when the virtual keyboard opens
+document.getElementById("chatInput").addEventListener("focus", function() {
+    setTimeout(() => {
+        const chatBox = document.getElementById("chat-box");
+        chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+    }, 300); // 300ms delay allows the Android keyboard to finish sliding up
 });
