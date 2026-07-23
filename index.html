@@ -224,6 +224,21 @@
             
         </div>
     </div>
+
+    <!-- CUSTOM PWA INSTALL BANNER -->
+<div id="pwa-install-banner" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 380px; background: rgba(255, 255, 255, 0.35); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.6); padding: 18px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 10000; text-align: center; box-sizing: border-box;">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+        <img src="icon-192.png" alt="App Logo" style="width: 48px; height: 48px; border-radius: 12px; background: white; padding: 2px;">
+        <div style="text-align: left;">
+            <h4 style="margin: 0; color: #2c3e50; font-size: 16px;">Install Room Book</h4>
+            <p style="margin: 2px 0 0 0; color: #555; font-size: 12px;">Add to Home Screen for quick access!</p>
+        </div>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button id="pwa-install-btn" style="flex: 1; padding: 10px; font-size: 14px; background: #27ae60;">INSTALL</button>
+        <button onclick="dismissInstallBanner()" style="flex: 1; padding: 10px; font-size: 14px; background: #7f8fa6; box-shadow: none;">LATER</button>
+    </div>
+</div>
     
     <script src="app.js"></script>
     <script>
