@@ -884,3 +884,42 @@ if (window.visualViewport) {
         }
     });
 }
+
+// --- Custom PWA Install Engine ---
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the default browser banner from appearing
+    e.preventDefault();
+    deferredPrompt = e;
+
+    // Check if the user previously dismissed the prompt during this session
+    if (!sessionStorage.getItem('pwa_banner_dismissed')) {
+        document.getElementById('pwa-install-banner').style.display = 'block';
+    }
+});
+
+document.getElementById('pwa-install-btn').addEventListener('click', async () => {
+    if (deferredPrompt) {
+        // Show the native install prompt triggered by user click
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+            console.log('User accepted the PWA install prompt');
+        }
+        deferredPrompt = null;
+        document.getElementById('pwa-install-banner').style.display = 'none';
+    }
+});
+
+function dismissInstallBanner() {
+    document.getElementById('pwa-install-banner').style.display = 'none';
+    sessionStorage.setItem('pwa_banner_dismissed', 'true');
+}
+
+// Hide banner automatically if app is already installed
+window.addEventListener('appinstalled', () => {
+    document.getElementById('pwa-install-banner').style.display = 'none';
+    deferredPrompt = null;
+});
