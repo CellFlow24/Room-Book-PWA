@@ -77,8 +77,9 @@ async function changePassword() {
     const newPassword = document.getElementById("newPassword").value;
     const messageEl = document.getElementById("reset-message");
 
-    if (!newPassword || newPassword === "1234") {
-        messageEl.innerText = "Please enter a valid new password.";
+    // Prevent them from using the default passwords again
+    if (!newPassword || newPassword === "1234" || newPassword.toLowerCase() === "pro") {
+        messageEl.innerText = "Please enter a valid, new password.";
         return;
     }
 
@@ -99,9 +100,19 @@ async function changePassword() {
         const data = await response.json();
 
         if (data.status === "success") {
-            currentPassword = newPassword;
+            // Hide the reset screen
             document.getElementById("reset-screen").style.display = "none";
-            showDashboard("User");
+            
+            // Force the user out using our existing logout function
+            logout(); 
+            
+            // Show a friendly green success message on the login screen
+            const loginMsg = document.getElementById("login-message");
+            loginMsg.style.color = "#27ae60"; 
+            loginMsg.innerText = "Password updated successfully! Please log in again.";
+            
+            // Clear the password field for the next time
+            document.getElementById("newPassword").value = "";
         } else {
             messageEl.innerText = data.message;
         }
