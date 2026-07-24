@@ -529,16 +529,23 @@ function switchHistoryTab(tab) {
     renderHistoryContent();
 }
 
-// Generate the HTML based on the selected tab
+// Generate the HTML based on the selected tab AND the filter
 function renderHistoryContent() {
     const contentEl = document.getElementById("review-content");
+    const filterValue = document.getElementById("historyFilter").value; // 'all' or 'me'
     let html = '';
 
     if (currentHistoryTab === 'expenses') {
-        if (currentHistoryData.expenses.length === 0) {
-            html = `<p style="font-size: 14px;">No expenses logged yet.</p>`;
+        // Filter expenses
+        let expensesToShow = currentHistoryData.expenses;
+        if (filterValue === 'me') {
+            expensesToShow = expensesToShow.filter(exp => exp.paidBy === currentUser || exp.splitWith.includes(currentUser));
+        }
+
+        if (expensesToShow.length === 0) {
+            html = `<p style="font-size: 14px;">No expenses logged for this view.</p>`;
         } else {
-            currentHistoryData.expenses.slice().reverse().forEach(exp => {
+            expensesToShow.slice().reverse().forEach(exp => {
                 const d = new Date(exp.date);
                 const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
                 
@@ -556,10 +563,16 @@ function renderHistoryContent() {
             });
         }
     } else {
-        if (currentHistoryData.chores.length === 0) {
-            html = `<p style="font-size: 14px;">No work logged yet.</p>`;
+        // Filter chores
+        let choresToShow = currentHistoryData.chores;
+        if (filterValue === 'me') {
+            choresToShow = choresToShow.filter(chore => chore.doneBy === currentUser || (chore.splitWith && chore.splitWith.includes(currentUser)));
+        }
+
+        if (choresToShow.length === 0) {
+            html = `<p style="font-size: 14px;">No work logged for this view.</p>`;
         } else {
-            currentHistoryData.chores.slice().reverse().forEach(chore => {
+            choresToShow.slice().reverse().forEach(chore => {
                 const d = new Date(chore.date);
                 const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
                 const splitText = chore.splitWith ? `<br>Paid by: ${chore.splitWith}` : "";
