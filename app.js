@@ -809,7 +809,12 @@ async function loadChatMessages() {
             let html = '';
             data.messages.forEach(msg => {
                 const d = new Date(msg.date);
+                // Create time string
                 let timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                // Create date string (e.g., 24/7/2026)
+                let dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+                // Combine them
+                let fullDateTime = `${dateStr} • ${timeStr}`;
                 
                 // Magical Regex to find @names and wrap them in the highlight CSS class!
                 let formattedText = msg.message.replace(/(@\w+)/g, '<span class="tag-highlight">$1</span>');
@@ -819,23 +824,23 @@ async function loadChatMessages() {
                     <div class="chat-bubble msg-admin">
                         <span style="font-size: 18px;">📢</span><br>
                         ${formattedText}
-                        <div style="font-size: 10px; opacity: 0.8; margin-top: 5px; font-weight: normal;">${timeStr}</div>
+                        <div style="font-size: 10px; opacity: 0.8; margin-top: 5px; font-weight: normal;">${fullDateTime}</div>
                     </div>`;
                 } else if (msg.sender === currentUser) {
                     html += `
                     <div class="chat-bubble msg-mine">
-                        <span class="chat-meta">${timeStr}</span>
+                        <span class="chat-meta">${fullDateTime}</span>
                         ${formattedText}
                     </div>`;
                 } else {
                     html += `
                     <div class="chat-bubble msg-other">
-                        <span class="chat-meta">${msg.sender} • ${timeStr}</span>
+                        <span class="chat-meta">${msg.sender} • ${fullDateTime}</span>
                         ${formattedText}
                     </div>`;
                 }
             });
-
+            
             chatBox.innerHTML = html;
             // Smoothly auto-scroll to the absolute bottom of the chat
             chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
