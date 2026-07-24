@@ -123,11 +123,11 @@
                 <button id="tab-btn-chores" onclick="switchHistoryTab('chores')" style="padding: 12px; font-size: 15px; background: rgba(255,255,255,0.6); color: #333; border-radius: 12px; box-shadow: none;">🧹 Work Log</button>
             </div>
 
-            <!-- NEW FILTER DROPDOWN -->
-            <select id="historyFilter" onchange="renderHistoryContent()" style="margin-bottom: 10px; padding: 10px; border-radius: 8px; font-size: 14px; background: rgba(255,255,255,0.9);">
-                <option value="all">View: Everyone</option>
-                <option value="me">View: Only Me</option>
-            </select>
+            <!-- PILL TOGGLE FILTER -->
+            <div style="display: flex; background: rgba(255, 255, 255, 0.4); border-radius: 20px; padding: 4px; margin-bottom: 15px;">
+                <button id="filter-btn-all" onclick="switchHistoryFilter('all')" style="flex: 1; padding: 8px; font-size: 13px; background: #3498db; color: white; border-radius: 16px; box-shadow: none;">Everyone</button>
+                <button id="filter-btn-me" onclick="switchHistoryFilter('me')" style="flex: 1; padding: 8px; font-size: 13px; background: transparent; color: #333; border-radius: 16px; box-shadow: none;">Only Me</button>
+            </div>
 
             <div id="review-content" style="background: rgba(255,255,255,0.8); padding: 15px; border-radius: 12px; color: #2c3e50; text-align: left; max-height: 400px; overflow-y: auto;">
                 Loading history...
