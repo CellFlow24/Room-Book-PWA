@@ -479,6 +479,7 @@ document.querySelector('.button-grid button:nth-child(3)').onclick = async () =>
 
 let currentHistoryData = { expenses: [], chores: [] };
 let currentHistoryTab = 'expenses';
+let currentHistoryFilter = 'all'; 
 
 document.querySelector('.button-grid button:nth-child(4)').onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
@@ -493,6 +494,7 @@ document.querySelector('.button-grid button:nth-child(4)').onclick = async () =>
     document.getElementById("tab-btn-chores").style.background = "rgba(255,255,255,0.6)";
     document.getElementById("tab-btn-chores").style.color = "#333";
     currentHistoryTab = 'expenses';
+    switchHistoryFilter('all');
 
     try {
         const response = await fetch(API_URL, {
@@ -529,10 +531,27 @@ function switchHistoryTab(tab) {
     renderHistoryContent();
 }
 
+// Switch Filter Logic (Pill Buttons)
+function switchHistoryFilter(filter) {
+    currentHistoryFilter = filter;
+    if (filter === 'all') {
+        document.getElementById("filter-btn-all").style.background = "#3498db";
+        document.getElementById("filter-btn-all").style.color = "white";
+        document.getElementById("filter-btn-me").style.background = "transparent";
+        document.getElementById("filter-btn-me").style.color = "#333";
+    } else {
+        document.getElementById("filter-btn-me").style.background = "#3498db";
+        document.getElementById("filter-btn-me").style.color = "white";
+        document.getElementById("filter-btn-all").style.background = "transparent";
+        document.getElementById("filter-btn-all").style.color = "#333";
+    }
+    renderHistoryContent();
+}
+
 // Generate the HTML based on the selected tab AND the filter
 function renderHistoryContent() {
     const contentEl = document.getElementById("review-content");
-    const filterValue = document.getElementById("historyFilter").value; // 'all' or 'me'
+    const filterValue = currentHistoryFilter;
     let html = '';
 
     if (currentHistoryTab === 'expenses') {
