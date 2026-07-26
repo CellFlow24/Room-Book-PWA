@@ -182,7 +182,7 @@ document.querySelector('.button-grid button:nth-child(1)').onclick = async () =>
 
 async function loadActiveUsers() {
     const container = document.getElementById("dynamic-split-users");
-    container.innerHTML = '<p style="font-size: 14px; color: #333;">Loading users...</p>';
+    container.innerHTML = '<div style="text-align: center;"><img src="loding.png" class="custom-loader-img" style="width: 80px; margin: 10px auto;" alt="Loading..."></div>';
     
     try {
         const response = await fetch(API_URL, {
@@ -266,7 +266,7 @@ document.querySelector('.button-grid button:nth-child(2)').onclick = async () =>
 
 async function loadChoreActiveUsers() {
     const container = document.getElementById("dynamic-chore-split-users");
-    container.innerHTML = '<p style="font-size: 14px; color: #333;">Loading users...</p>';
+    container.innerHTML = '<div style="text-align: center;"><img src="loding.png" class="custom-loader-img" style="width: 80px; margin: 10px auto;" alt="Loading..."></div>';
     
     try {
         const response = await fetch(API_URL, {
@@ -380,7 +380,7 @@ document.querySelector('.button-grid button:nth-child(3)').onclick = async () =>
     document.getElementById("pay-details-screen").style.display = "block";
     
     const contentEl = document.getElementById("pay-details-content");
-    contentEl.innerHTML = "Calculating balances...";
+    contentEl.innerHTML = '<div style="text-align: center;"><img src="loding.png" class="custom-loader-img" alt="Calculating..."><p style="color: #2c3e50; margin-top: 10px; font-weight: bold;">Calculating balances...</p></div>';
 
     try {
         const response = await fetch(API_URL, {
@@ -486,7 +486,7 @@ document.querySelector('.button-grid button:nth-child(4)').onclick = async () =>
     document.getElementById("expense-review-screen").style.display = "block";
     
     const contentEl = document.getElementById("review-content");
-    contentEl.innerHTML = "Fetching history from server...";
+    contentEl.innerHTML = '<div style="text-align: center;"><img src="loding.png" class="custom-loader-img" alt="Loading..."><p style="color: #2c3e50; margin-top: 10px; font-weight: bold;">Fetching history...</p></div>';
 
     // Reset tabs visually to default (Expenses) when opening
     document.getElementById("tab-btn-expenses").style.background = "var(--accent)";
