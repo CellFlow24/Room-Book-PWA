@@ -10,6 +10,9 @@ let chatPollingInterval;
 let dashboardPollingInterval;
 let lastKnownChatCount = parseInt(localStorage.getItem("roombook_chat_count")) || 0;
 
+// --- NEW: Local Data Cache ---
+let cachedAppData = JSON.parse(localStorage.getItem("messkhata_data")) || null;
+
 // --- NEW: Auto-Login Check ---
 window.addEventListener('load', () => {
     const savedUser = localStorage.getItem("messkhata_user");
@@ -400,15 +403,20 @@ async function saveChore() {
     }
 }
 
-// --- Pay Details Logic ---
-
+// --- UPDATED PAY DETAILS LOGIC (INSTANT LOAD) ---
 document.querySelector('.button-grid button:nth-child(3)').onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
     document.getElementById("pay-details-screen").style.display = "block";
-    
     const contentEl = document.getElementById("pay-details-content");
-    contentEl.innerHTML = '<div style="text-align: center;"><img src="loding.png" class="custom-loader-img" alt="Calculating..."><p style="color: #2c3e50; margin-top: 10px; font-weight: bold;">Calculating balances...</p></div>';
 
+    // 1. Show instantly if we have cached data
+    if (cachedAppData) {
+        renderPayDetails(cachedAppData, contentEl);
+    } else {
+        contentEl.innerHTML = '<div style="text-align: center;"><img src="loding.png" class="custom-loader-img" alt="Calculating..."><p style="color: #2c3e50; margin-top: 10px; font-weight: bold;">Calculating balances...</p></div>';
+    }
+
+    // 2. Silently fetch fresh data in the background
     try {
         const response = await fetch(API_URL, {
             method: "POST",
@@ -417,105 +425,83 @@ document.querySelector('.button-grid button:nth-child(3)').onclick = async () =>
         const data = await response.json();
 
         if (data.status === "success") {
-            const users = data.activeUsers; 
-            let balances = {};
-            let totalPaid = {};
-            let choresEarned = {};
-            
-            users.forEach(u => {
-                balances[u] = 0;
-                totalPaid[u] = 0;
-                choresEarned[u] = 0;
-            });
-
-            data.expenses.forEach(exp => {
-                const amount = parseFloat(exp.amount) || 0;
-                const payer = exp.paidBy;
-                const splitList = exp.splitWith.split(',').map(s => s.trim());
-                const splitCount = splitList.length;
-
-                if (splitCount > 0 && users.includes(payer)) {
-                    totalPaid[payer] += amount;
-                    balances[payer] += amount; 
-                    
-                    const share = amount / splitCount;
-                    splitList.forEach(person => {
-                        if (users.includes(person)) {
-                            balances[person] -= share;
-                        }
-                    });
-                }
-            });
-
-            data.chores.forEach(chore => {
-                const amount = parseFloat(chore.amount) || 0;
-                const earner = chore.doneBy;
-                
-                const splitList = chore.splitWith ? chore.splitWith.split(',').map(s => s.trim()) : users.filter(u => u !== earner);
-                const splitCount = splitList.length;
-                
-                if (users.includes(earner)) {
-                    choresEarned[earner] += amount;
-                    balances[earner] += amount; 
-                    
-                    if (splitCount > 0) {
-                        const splitCost = amount / splitCount;
-                        splitList.forEach(person => {
-                            if (users.includes(person)) {
-                                balances[person] -= splitCost;
-                            }
-                        });
-                    }
-                }
-            });
-
-            let html = `<h3 style="margin-top:0; text-align:center; color:#2c3e50;">Balance Sheet</h3>`;
-            
-            users.forEach(user => {
-                const balance = balances[user];
-                const isOwed = balance > 0;
-                const color = isOwed ? "#27ae60" : (balance < 0 ? "#e74c3c" : "#2c3e50");
-                const statusText = isOwed ? "Gets Back" : (balance < 0 ? "Owes" : "Settled");
-                
-                html += `
-                <div style="background: white; padding: 15px; margin-bottom: 12px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <h4 style="margin: 0 0 10px 0; font-size: 18px; color: #333;">${user}</h4>
-                    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px;">
-                        <span>Total Paid:</span> <span>₹${totalPaid[user].toFixed(2)}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px;">
-                        <span>Work Earned:</span> <span>₹${choresEarned[user].toFixed(2)}</span>
-                    </div>
-                    <hr style="border: 0; border-top: 1px solid #eee; margin: 8px 0;">
-                    <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; color: ${color};">
-                        <span>${statusText}:</span> <span>₹${Math.abs(balance).toFixed(2)}</span>
-                    </div>
-                </div>`;
-            });
-
-            contentEl.innerHTML = html;
-        } else {
-            contentEl.innerHTML = "Error loading data.";
+            cachedAppData = data;
+            localStorage.setItem("messkhata_data", JSON.stringify(data));
+            renderPayDetails(data, contentEl);
         }
     } catch (error) {
-        contentEl.innerHTML = "Connection failed.";
+        if (!cachedAppData) contentEl.innerHTML = "Connection failed.";
     }
 };
 
-// --- Expense Review Logic ---
+function renderPayDetails(data, contentEl) {
+    const users = data.activeUsers; 
+    let balances = {};
+    let totalPaid = {};
+    let choresEarned = {};
+    
+    users.forEach(u => { balances[u] = 0; totalPaid[u] = 0; choresEarned[u] = 0; });
 
-let currentHistoryData = { expenses: [], chores: [] };
-let currentHistoryTab = 'expenses';
-let currentHistoryFilter = 'all'; 
+    data.expenses.forEach(exp => {
+        const amount = parseFloat(exp.amount) || 0;
+        const payer = exp.paidBy;
+        const splitList = exp.splitWith.split(',').map(s => s.trim());
+        const splitCount = splitList.length;
 
+        if (splitCount > 0 && users.includes(payer)) {
+            totalPaid[payer] += amount;
+            balances[payer] += amount; 
+            const share = amount / splitCount;
+            splitList.forEach(person => { if (users.includes(person)) balances[person] -= share; });
+        }
+    });
+
+    data.chores.forEach(chore => {
+        const amount = parseFloat(chore.amount) || 0;
+        const earner = chore.doneBy;
+        const splitList = chore.splitWith ? chore.splitWith.split(',').map(s => s.trim()) : users.filter(u => u !== earner);
+        const splitCount = splitList.length;
+        
+        if (users.includes(earner)) {
+            choresEarned[earner] += amount;
+            balances[earner] += amount; 
+            if (splitCount > 0) {
+                const splitCost = amount / splitCount;
+                splitList.forEach(person => { if (users.includes(person)) balances[person] -= splitCost; });
+            }
+        }
+    });
+
+    let html = `<h3 style="margin-top:0; text-align:center; color:#2c3e50;">Balance Sheet</h3>`;
+    users.forEach(user => {
+        const balance = balances[user];
+        const isOwed = balance > 0;
+        const color = isOwed ? "#27ae60" : (balance < 0 ? "#e74c3c" : "#2c3e50");
+        const statusText = isOwed ? "Gets Back" : (balance < 0 ? "Owes" : "Settled");
+        html += `
+        <div style="background: white; padding: 15px; margin-bottom: 12px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <h4 style="margin: 0 0 10px 0; font-size: 18px; color: #333;">${user}</h4>
+            <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px;">
+                <span>Total Paid:</span> <span>₹${totalPaid[user].toFixed(2)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px;">
+                <span>Work Earned:</span> <span>₹${choresEarned[user].toFixed(2)}</span>
+            </div>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 8px 0;">
+            <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; color: ${color};">
+                <span>${statusText}:</span> <span>₹${Math.abs(balance).toFixed(2)}</span>
+            </div>
+        </div>`;
+    });
+    contentEl.innerHTML = html;
+}
+
+// --- UPDATED EXPENSE REVIEW LOGIC (INSTANT LOAD & 30 ROW LIMIT) ---
 document.querySelector('.button-grid button:nth-child(4)').onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
     document.getElementById("expense-review-screen").style.display = "block";
-    
     const contentEl = document.getElementById("review-content");
-    contentEl.innerHTML = '<div style="text-align: center;"><img src="loding.png" class="custom-loader-img" alt="Loading..."><p style="color: #2c3e50; margin-top: 10px; font-weight: bold;">Fetching history...</p></div>';
 
-    // Reset tabs visually to default (Expenses) when opening
     document.getElementById("tab-btn-expenses").style.background = "var(--accent)";
     document.getElementById("tab-btn-expenses").style.color = "white";
     document.getElementById("tab-btn-chores").style.background = "rgba(255,255,255,0.6)";
@@ -523,6 +509,15 @@ document.querySelector('.button-grid button:nth-child(4)').onclick = async () =>
     currentHistoryTab = 'expenses';
     switchHistoryFilter('all');
 
+    // 1. Show instantly from cache
+    if (cachedAppData) {
+        currentHistoryData = cachedAppData;
+        renderHistoryContent();
+    } else {
+        contentEl.innerHTML = '<div style="text-align: center;"><img src="loding.png" class="custom-loader-img" alt="Loading..."><p style="color: #2c3e50; margin-top: 10px; font-weight: bold;">Fetching history...</p></div>';
+    }
+
+    // 2. Silently fetch fresh data
     try {
         const response = await fetch(API_URL, {
             method: "POST",
@@ -531,15 +526,80 @@ document.querySelector('.button-grid button:nth-child(4)').onclick = async () =>
         const data = await response.json();
 
         if (data.status === "success") {
-            currentHistoryData = data; // Store data globally for switching tabs
+            currentHistoryData = data;
+            cachedAppData = data;
+            localStorage.setItem("messkhata_data", JSON.stringify(data));
             renderHistoryContent();
-        } else {
-            contentEl.innerHTML = "Error loading history.";
         }
     } catch (error) {
-        contentEl.innerHTML = "Connection failed.";
+        if (!cachedAppData) contentEl.innerHTML = "Connection failed.";
     }
 };
+
+function renderHistoryContent() {
+    const contentEl = document.getElementById("review-content");
+    const filterValue = currentHistoryFilter;
+    let html = '';
+
+    if (currentHistoryTab === 'expenses') {
+        let expensesToShow = currentHistoryData.expenses;
+        if (filterValue === 'me') {
+            expensesToShow = expensesToShow.filter(exp => exp.paidBy === currentUser || exp.splitWith.includes(currentUser));
+        }
+        
+        // NEW: Only take the last 30 entries to prevent rendering lag
+        expensesToShow = expensesToShow.slice(-30).reverse();
+
+        if (expensesToShow.length === 0) {
+            html = `<p style="font-size: 14px;">No expenses logged for this view.</p>`;
+        } else {
+            expensesToShow.forEach(exp => {
+                const d = new Date(exp.date);
+                const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+                html += `
+                <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; color:#333;">
+                        <span>${exp.item}</span>
+                        <span style="color:#e74c3c;">₹${exp.amount}</span>
+                    </div>
+                    <div style="font-size:12px; color:#7f8fa6; margin-top:4px;">
+                        ${dateStr} | Paid by: <b>${exp.paidBy}</b> <br>
+                        Split: ${exp.splitWith}
+                    </div>
+                </div>`;
+            });
+        }
+    } else {
+        let choresToShow = currentHistoryData.chores;
+        if (filterValue === 'me') {
+            choresToShow = choresToShow.filter(chore => chore.doneBy === currentUser || (chore.splitWith && chore.splitWith.includes(currentUser)));
+        }
+        
+        // NEW: Only take the last 30 entries to prevent rendering lag
+        choresToShow = choresToShow.slice(-30).reverse();
+
+        if (choresToShow.length === 0) {
+            html = `<p style="font-size: 14px;">No work logged for this view.</p>`;
+        } else {
+            choresToShow.forEach(chore => {
+                const d = new Date(chore.date);
+                const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+                const splitText = chore.splitWith ? `<br>Paid by: ${chore.splitWith}` : "";
+                html += `
+                <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; color:#333;">
+                        <span>${chore.item}</span>
+                        <span style="color:#27ae60;">+₹${chore.amount}</span>
+                    </div>
+                    <div style="font-size:12px; color:#7f8fa6; margin-top:4px;">
+                        ${dateStr} | Done by: <b>${chore.doneBy}</b> ${splitText}
+                    </div>
+                </div>`;
+            });
+        }
+    }
+    contentEl.innerHTML = html;
+}
 
 // Switch Tab Logic
 function switchHistoryTab(tab) {
