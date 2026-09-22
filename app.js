@@ -511,7 +511,12 @@ function renderPayDetails(data, contentEl) {
     contentEl.innerHTML = html;
 }
 
-// --- Expense Review Logic (Infinite Scroll & Crash Fix) ---
+// --- Expense Review Logic (Crash Fix & Infinite Scroll) ---
+
+// 1. Declare these variables globally so they are never "undefined"
+let currentHistoryData = { expenses: [], chores: [] };
+let currentHistoryTab = 'expenses';
+let currentHistoryFilter = 'all';
 let currentHistoryItemsToShow = 20;
 
 document.querySelector('.button-grid button:nth-child(4)').onclick = async () => {
@@ -519,14 +524,23 @@ document.querySelector('.button-grid button:nth-child(4)').onclick = async () =>
     document.getElementById("expense-review-screen").style.display = "block";
     const contentEl = document.getElementById("review-content");
 
+    // 2. Set Tab UI
     document.getElementById("tab-btn-expenses").style.background = "var(--accent)";
     document.getElementById("tab-btn-expenses").style.color = "white";
     document.getElementById("tab-btn-chores").style.background = "rgba(255,255,255,0.6)";
     document.getElementById("tab-btn-chores").style.color = "#333";
+    
+    // 3. Set Filter UI manually without triggering a premature render crash
+    document.getElementById("filter-btn-all").style.background = "#3498db";
+    document.getElementById("filter-btn-all").style.color = "white";
+    document.getElementById("filter-btn-me").style.background = "transparent";
+    document.getElementById("filter-btn-me").style.color = "#333";
+    
     currentHistoryTab = 'expenses';
-    currentHistoryItemsToShow = 20; // Reset scroll counter
-    switchHistoryFilter('all');
+    currentHistoryFilter = 'all';
+    currentHistoryItemsToShow = 20; 
 
+    // 4. NOW it is safe to load and render the data
     if (cachedAppData) {
         currentHistoryData = cachedAppData;
         renderHistoryContent();
@@ -556,25 +570,20 @@ function renderHistoryContent() {
     const contentEl = document.getElementById("review-content");
     const filterValue = currentHistoryFilter;
     let html = '';
-
     let dataList = [];
 
     if (currentHistoryTab === 'expenses') {
         dataList = currentHistoryData.expenses || [];
         if (filterValue === 'me') {
-            // BUG FIX: Added String() so it doesn't crash if a column is empty
             dataList = dataList.filter(exp => exp.paidBy === currentUser || (exp.splitWith && String(exp.splitWith).includes(currentUser)));
         }
     } else {
         dataList = currentHistoryData.chores || [];
         if (filterValue === 'me') {
-            // BUG FIX: Added String() so it doesn't crash if a column is empty
             dataList = dataList.filter(chore => chore.doneBy === currentUser || (chore.splitWith && String(chore.splitWith).includes(currentUser)));
         }
     }
 
-    // 1. Reverse so newest is at the top
-    // 2. Slice based on our infinite scroll tracker
     let displayList = dataList.slice().reverse().slice(0, currentHistoryItemsToShow);
 
     if (displayList.length === 0) {
@@ -616,7 +625,7 @@ function renderHistoryContent() {
 
 function switchHistoryTab(tab) {
     currentHistoryTab = tab;
-    currentHistoryItemsToShow = 20; // Reset scroll to top
+    currentHistoryItemsToShow = 20; 
     if (tab === 'expenses') {
         document.getElementById("tab-btn-expenses").style.background = "var(--accent)";
         document.getElementById("tab-btn-expenses").style.color = "white";
@@ -628,13 +637,13 @@ function switchHistoryTab(tab) {
         document.getElementById("tab-btn-expenses").style.background = "rgba(255,255,255,0.6)";
         document.getElementById("tab-btn-expenses").style.color = "#333";
     }
-    document.getElementById("review-content").scrollTop = 0; // Scroll visual div to top
+    document.getElementById("review-content").scrollTop = 0; 
     renderHistoryContent();
 }
 
 function switchHistoryFilter(filter) {
     currentHistoryFilter = filter;
-    currentHistoryItemsToShow = 20; // Reset scroll to top
+    currentHistoryItemsToShow = 20; 
     if (filter === 'all') {
         document.getElementById("filter-btn-all").style.background = "#3498db";
         document.getElementById("filter-btn-all").style.color = "white";
@@ -646,13 +655,12 @@ function switchHistoryFilter(filter) {
         document.getElementById("filter-btn-all").style.background = "transparent";
         document.getElementById("filter-btn-all").style.color = "#333";
     }
-    document.getElementById("review-content").scrollTop = 0; // Scroll visual div to top
+    document.getElementById("review-content").scrollTop = 0; 
     renderHistoryContent();
 }
 
 // --- INFINITE SCROLL LISTENER ---
 document.getElementById("review-content").addEventListener("scroll", function() {
-    // Detects when the user reaches the bottom of the div
     if (this.scrollTop + this.clientHeight >= this.scrollHeight - 10) {
         
         let maxData = 0;
@@ -662,7 +670,6 @@ document.getElementById("review-content").addEventListener("scroll", function() 
             maxData = currentHistoryData.chores.length;
         }
 
-        // If there is still more history left, add 20 to the limit and refresh
         if (currentHistoryItemsToShow < maxData) {
             currentHistoryItemsToShow += 20; 
             renderHistoryContent(); 
