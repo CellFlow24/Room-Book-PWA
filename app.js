@@ -571,16 +571,27 @@ function renderHistoryContent() {
     const filterValue = currentHistoryFilter;
     let html = '';
     let dataList = [];
+    
+    // Convert the current user to lowercase for a bulletproof comparison
+    const lowerUser = currentUser.toLowerCase();
 
     if (currentHistoryTab === 'expenses') {
         dataList = currentHistoryData.expenses || [];
         if (filterValue === 'me') {
-            dataList = dataList.filter(exp => exp.paidBy === currentUser || (exp.splitWith && String(exp.splitWith).includes(currentUser)));
+            // Check against both paidBy and splitWith using lowercase
+            dataList = dataList.filter(exp => 
+                String(exp.paidBy).toLowerCase() === lowerUser || 
+                (exp.splitWith && String(exp.splitWith).toLowerCase().includes(lowerUser))
+            );
         }
     } else {
         dataList = currentHistoryData.chores || [];
         if (filterValue === 'me') {
-            dataList = dataList.filter(chore => chore.doneBy === currentUser || (chore.splitWith && String(chore.splitWith).includes(currentUser)));
+            // Check against both doneBy and splitWith using lowercase
+            dataList = dataList.filter(chore => 
+                String(chore.doneBy).toLowerCase() === lowerUser || 
+                (chore.splitWith && String(chore.splitWith).toLowerCase().includes(lowerUser))
+            );
         }
     }
 
