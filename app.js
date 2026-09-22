@@ -511,7 +511,9 @@ function renderPayDetails(data, contentEl) {
     contentEl.innerHTML = html;
 }
 
-// --- Expense Review Logic ---
+// --- Expense Review Logic (Infinite Scroll & Crash Fix) ---
+let currentHistoryItemsToShow = 20;
+
 document.querySelector('.button-grid button:nth-child(4)').onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
     document.getElementById("expense-review-screen").style.display = "block";
@@ -522,6 +524,7 @@ document.querySelector('.button-grid button:nth-child(4)').onclick = async () =>
     document.getElementById("tab-btn-chores").style.background = "rgba(255,255,255,0.6)";
     document.getElementById("tab-btn-chores").style.color = "#333";
     currentHistoryTab = 'expenses';
+    currentHistoryItemsToShow = 20; // Reset scroll counter
     switchHistoryFilter('all');
 
     if (cachedAppData) {
@@ -554,66 +557,66 @@ function renderHistoryContent() {
     const filterValue = currentHistoryFilter;
     let html = '';
 
-    if (currentHistoryTab === 'expenses') {
-        let expensesToShow = currentHistoryData.expenses;
-        if (filterValue === 'me') {
-            expensesToShow = expensesToShow.filter(exp => exp.paidBy === currentUser || exp.splitWith.includes(currentUser));
-        }
-        
-        expensesToShow = expensesToShow.slice(-30).reverse();
+    let dataList = [];
 
-        if (expensesToShow.length === 0) {
-            html = `<p style="font-size: 14px;">No expenses logged for this view.</p>`;
-        } else {
-            expensesToShow.forEach(exp => {
-                const d = new Date(exp.date);
-                const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-                html += `
-                <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <div style="display:flex; justify-content:space-between; font-weight:bold; color:#333;">
-                        <span>${exp.item}</span>
-                        <span style="color:#e74c3c;">₹${exp.amount}</span>
-                    </div>
-                    <div style="font-size:12px; color:#7f8fa6; margin-top:4px;">
-                        ${dateStr} | Paid by: <b>${exp.paidBy}</b> <br>
-                        Split: ${exp.splitWith}
-                    </div>
-                </div>`;
-            });
+    if (currentHistoryTab === 'expenses') {
+        dataList = currentHistoryData.expenses || [];
+        if (filterValue === 'me') {
+            // BUG FIX: Added String() so it doesn't crash if a column is empty
+            dataList = dataList.filter(exp => exp.paidBy === currentUser || (exp.splitWith && String(exp.splitWith).includes(currentUser)));
         }
     } else {
-        let choresToShow = currentHistoryData.chores;
+        dataList = currentHistoryData.chores || [];
         if (filterValue === 'me') {
-            choresToShow = choresToShow.filter(chore => chore.doneBy === currentUser || (chore.splitWith && chore.splitWith.includes(currentUser)));
+            // BUG FIX: Added String() so it doesn't crash if a column is empty
+            dataList = dataList.filter(chore => chore.doneBy === currentUser || (chore.splitWith && String(chore.splitWith).includes(currentUser)));
         }
-        
-        choresToShow = choresToShow.slice(-30).reverse();
+    }
 
-        if (choresToShow.length === 0) {
-            html = `<p style="font-size: 14px;">No work logged for this view.</p>`;
-        } else {
-            choresToShow.forEach(chore => {
-                const d = new Date(chore.date);
-                const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-                const splitText = chore.splitWith ? `<br>Paid by: ${chore.splitWith}` : "";
+    // 1. Reverse so newest is at the top
+    // 2. Slice based on our infinite scroll tracker
+    let displayList = dataList.slice().reverse().slice(0, currentHistoryItemsToShow);
+
+    if (displayList.length === 0) {
+        html = `<p style="font-size: 14px;">No history found for this view.</p>`;
+    } else {
+        displayList.forEach(item => {
+            const d = new Date(item.date);
+            const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+            
+            if (currentHistoryTab === 'expenses') {
                 html += `
                 <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                     <div style="display:flex; justify-content:space-between; font-weight:bold; color:#333;">
-                        <span>${chore.item}</span>
-                        <span style="color:#27ae60;">+₹${chore.amount}</span>
+                        <span>${item.item}</span>
+                        <span style="color:#e74c3c;">₹${item.amount}</span>
                     </div>
                     <div style="font-size:12px; color:#7f8fa6; margin-top:4px;">
-                        ${dateStr} | Done by: <b>${chore.doneBy}</b> ${splitText}
+                        ${dateStr} | Paid by: <b>${item.paidBy}</b> <br>
+                        Split: ${item.splitWith}
                     </div>
                 </div>`;
-            });
-        }
+            } else {
+                const splitText = item.splitWith ? `<br>Paid by: ${item.splitWith}` : "";
+                html += `
+                <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; color:#333;">
+                        <span>${item.item}</span>
+                        <span style="color:#27ae60;">+₹${item.amount}</span>
+                    </div>
+                    <div style="font-size:12px; color:#7f8fa6; margin-top:4px;">
+                        ${dateStr} | Done by: <b>${item.doneBy}</b> ${splitText}
+                    </div>
+                </div>`;
+            }
+        });
     }
     contentEl.innerHTML = html;
 }
 
 function switchHistoryTab(tab) {
     currentHistoryTab = tab;
+    currentHistoryItemsToShow = 20; // Reset scroll to top
     if (tab === 'expenses') {
         document.getElementById("tab-btn-expenses").style.background = "var(--accent)";
         document.getElementById("tab-btn-expenses").style.color = "white";
@@ -625,11 +628,13 @@ function switchHistoryTab(tab) {
         document.getElementById("tab-btn-expenses").style.background = "rgba(255,255,255,0.6)";
         document.getElementById("tab-btn-expenses").style.color = "#333";
     }
+    document.getElementById("review-content").scrollTop = 0; // Scroll visual div to top
     renderHistoryContent();
 }
 
 function switchHistoryFilter(filter) {
     currentHistoryFilter = filter;
+    currentHistoryItemsToShow = 20; // Reset scroll to top
     if (filter === 'all') {
         document.getElementById("filter-btn-all").style.background = "#3498db";
         document.getElementById("filter-btn-all").style.color = "white";
@@ -641,8 +646,29 @@ function switchHistoryFilter(filter) {
         document.getElementById("filter-btn-all").style.background = "transparent";
         document.getElementById("filter-btn-all").style.color = "#333";
     }
+    document.getElementById("review-content").scrollTop = 0; // Scroll visual div to top
     renderHistoryContent();
 }
+
+// --- INFINITE SCROLL LISTENER ---
+document.getElementById("review-content").addEventListener("scroll", function() {
+    // Detects when the user reaches the bottom of the div
+    if (this.scrollTop + this.clientHeight >= this.scrollHeight - 10) {
+        
+        let maxData = 0;
+        if (currentHistoryTab === 'expenses' && currentHistoryData.expenses) {
+            maxData = currentHistoryData.expenses.length;
+        } else if (currentHistoryData.chores) {
+            maxData = currentHistoryData.chores.length;
+        }
+
+        // If there is still more history left, add 20 to the limit and refresh
+        if (currentHistoryItemsToShow < maxData) {
+            currentHistoryItemsToShow += 20; 
+            renderHistoryContent(); 
+        }
+    }
+});
 
 // --- Admin Logic ---
 
