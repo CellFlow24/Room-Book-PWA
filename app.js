@@ -998,3 +998,68 @@ window.addEventListener('appinstalled', () => {
     document.getElementById('pwa-install-banner').style.display = 'none';
     deferredPrompt = null;
 });
+
+// --- NATIVE APP BACK BUTTON LOGIC ---
+let backPressTimer = null;
+
+// Push an initial history state to act as a trap for the physical back button
+window.history.pushState({ page: 'messkhata' }, "");
+
+window.addEventListener('popstate', (e) => {
+    const dashboard = document.getElementById("dashboard-screen");
+    const login = document.getElementById("login-screen");
+    
+    // CASE 1: If inside a menu (Expense, Work, Chat, Admin) -> Go back to Dashboard
+    if (dashboard.style.display === "none" && login.style.display === "none") {
+        goBackToDashboard();
+        // Reset the trap so the user stays inside the app
+        window.history.pushState({ page: 'messkhata' }, "");
+    } 
+    // CASE 2: If already on Dashboard -> Handle Double Press to Exit
+    else if (dashboard.style.display === "block") {
+        if (backPressTimer) {
+            // Second press detected within the time limit! 
+            // Force the browser back action to native close the PWA
+            window.history.back(); 
+        } else {
+            // First press detected. Show toast notification and set a timer.
+            showExitWarning();
+            window.history.pushState({ page: 'messkhata' }, "");
+            
+            backPressTimer = setTimeout(() => {
+                backPressTimer = null;
+            }, 2000); // User has 2 seconds to press back again
+        }
+    } 
+    // CASE 3: If on Login Screen -> Prevent accidental closure
+    else {
+         window.history.pushState({ page: 'messkhata' }, "");
+    }
+});
+
+// Function to create a temporary Android-style floating toast message
+function showExitWarning() {
+    let warning = document.createElement("div");
+    warning.innerText = "Press back again to exit";
+    
+    // Styling to make it look like a native Android popup
+    warning.style.position = "fixed";
+    warning.style.bottom = "80px";
+    warning.style.left = "50%";
+    warning.style.transform = "translateX(-50%)";
+    warning.style.background = "rgba(0, 0, 0, 0.8)";
+    warning.style.color = "white";
+    warning.style.padding = "10px 20px";
+    warning.style.borderRadius = "20px";
+    warning.style.zIndex = "10000";
+    warning.style.fontSize = "14px";
+    warning.style.transition = "opacity 0.3s ease";
+    
+    document.body.appendChild(warning);
+    
+    // Smoothly fade out and remove the element from the DOM after 2 seconds
+    setTimeout(() => {
+        warning.style.opacity = "0";
+        setTimeout(() => warning.remove(), 300);
+    }, 2000);
+}
