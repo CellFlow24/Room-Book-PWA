@@ -572,26 +572,20 @@ function renderHistoryContent() {
     let html = '';
     let dataList = [];
 
-    // Protect against accidentally typing a space during login
-    const me = String(currentUser).trim();
+    // Normalize the logged-in user ID to lowercase to prevent capitalization mismatch crashes
+    const me = String(currentUser).trim().toLowerCase();
 
     if (currentHistoryTab === 'expenses') {
         dataList = currentHistoryData.expenses || [];
         if (filterValue === 'me') {
-            // Restored your original working exact-match logic with crash protection
-            dataList = dataList.filter(exp => 
-                exp.paidBy === me || 
-                (exp.splitWith && String(exp.splitWith).includes(me))
-            );
+            // STRICT FILTER: ONLY show expenses where the person who paid is exactly the current user
+            dataList = dataList.filter(exp => String(exp.paidBy).trim().toLowerCase() === me);
         }
     } else {
         dataList = currentHistoryData.chores || [];
         if (filterValue === 'me') {
-            // Restored your original working exact-match logic with crash protection
-            dataList = dataList.filter(chore => 
-                chore.doneBy === me || 
-                (chore.splitWith && String(chore.splitWith).includes(me))
-            );
+            // STRICT FILTER: ONLY show work where the person who did it is exactly the current user
+            dataList = dataList.filter(chore => String(chore.doneBy).trim().toLowerCase() === me);
         }
     }
 
@@ -633,6 +627,7 @@ function renderHistoryContent() {
     }
     contentEl.innerHTML = html;
 }
+
 
 function switchHistoryTab(tab) {
     currentHistoryTab = tab;
