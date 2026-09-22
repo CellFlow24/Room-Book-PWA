@@ -12,8 +12,10 @@ let lastKnownChatCount = parseInt(localStorage.getItem("roombook_chat_count")) |
 
 // --- NEW: Local Data Cache ---
 let cachedAppData = JSON.parse(localStorage.getItem("messkhata_data")) || null;
+let cachedUsers = JSON.parse(localStorage.getItem("messkhata_users")) || null;
+let cachedChoresList = JSON.parse(localStorage.getItem("messkhata_chores_list")) || null;
 
-// --- NEW: Auto-Login Check ---
+// --- Auto-Login Check ---
 window.addEventListener('load', () => {
     const savedUser = localStorage.getItem("messkhata_user");
     const savedPass = localStorage.getItem("messkhata_pass");
@@ -77,7 +79,6 @@ async function login() {
             currentPassword = passwordInput;
             currentRole = data.role;
             
-            // NEW: Save details to the device's local memory
             localStorage.setItem("messkhata_user", currentUser);
             localStorage.setItem("messkhata_pass", currentPassword);
             localStorage.setItem("messkhata_role", currentRole);
@@ -101,7 +102,6 @@ async function changePassword() {
     const newPassword = document.getElementById("newPassword").value;
     const messageEl = document.getElementById("reset-message");
 
-    // Prevent them from using the default passwords again
     if (!newPassword || newPassword === "1234" || newPassword.toLowerCase() === "pro") {
         messageEl.innerText = "Please enter a valid, new password.";
         return;
@@ -124,18 +124,11 @@ async function changePassword() {
         const data = await response.json();
 
         if (data.status === "success") {
-            // Hide the reset screen
             document.getElementById("reset-screen").style.display = "none";
-            
-            // Force the user out using our existing logout function
             logout(); 
-            
-            // Show a friendly green success message on the login screen
             const loginMsg = document.getElementById("login-message");
             loginMsg.style.color = "#27ae60"; 
             loginMsg.innerText = "Password updated successfully! Please log in again.";
-            
-            // Clear the password field for the next time
             document.getElementById("newPassword").value = "";
         } else {
             messageEl.innerText = data.message;
@@ -159,13 +152,11 @@ function showDashboard(role) {
         document.querySelector('.button-grid button:nth-child(2)').style.display = "block"; 
     }
 
-    // Start background check for new messages every 10 seconds
     checkNewMessagesBadge();
     dashboardPollingInterval = setInterval(checkNewMessagesBadge, 10000);
 }
 
 function goBackToDashboard() {
-    // Stop chat polling to save battery when leaving the chat screen!
     if (chatPollingInterval) clearInterval(chatPollingInterval);
     
     document.querySelectorAll('.dropdown-content').forEach(el => el.style.display = 'none');
@@ -176,7 +167,6 @@ function goBackToDashboard() {
     document.getElementById("admin-screen").style.display = "none"; 
     document.getElementById("chat-screen").style.display = "none"; 
     
-    // Restart dashboard badge check
     checkNewMessagesBadge();
     if (!dashboardPollingInterval) dashboardPollingInterval = setInterval(checkNewMessagesBadge, 10000);
     
@@ -190,7 +180,6 @@ function logout() {
     currentUser = "";
     currentPassword = "";
     
-    // NEW: Wipe the saved details from the device's memory
     localStorage.removeItem("messkhata_user");
     localStorage.removeItem("messkhata_pass");
     localStorage.removeItem("messkhata_role");
@@ -212,7 +201,12 @@ document.querySelector('.button-grid button:nth-child(1)').onclick = async () =>
 
 async function loadActiveUsers() {
     const container = document.getElementById("dynamic-split-users");
-    container.innerHTML = '<div style="text-align: center;"><img src="loding.png" class="custom-loader-img" style="width: 80px; margin: 10px auto;" alt="Loading..."></div>';
+    
+    if (cachedUsers) {
+        renderSplitUsers(cachedUsers, container);
+    } else {
+        container.innerHTML = '<div style="text-align: center;"><img src="loding.png" class="custom-loader-img" style="width: 80px; margin: 10px auto;" alt="Loading..."></div>';
+    }
     
     try {
         const response = await fetch(API_URL, {
@@ -222,16 +216,20 @@ async function loadActiveUsers() {
         const data = await response.json();
         
         if (data.status === "success") {
-            container.innerHTML = "";
-            data.users.forEach(user => {
-                container.innerHTML += `<label class="split-label"><input type="checkbox" class="split-check" value="${user}" checked> ${user}</label>`;
-            });
-        } else {
-            container.innerHTML = "Error loading users.";
+            cachedUsers = data.users;
+            localStorage.setItem("messkhata_users", JSON.stringify(data.users));
+            renderSplitUsers(data.users, container);
         }
     } catch (error) {
-        container.innerHTML = "Connection failed.";
+        if (!cachedUsers) container.innerHTML = "Connection failed.";
     }
+}
+
+function renderSplitUsers(users, container) {
+    container.innerHTML = "";
+    users.forEach(user => {
+        container.innerHTML += `<label class="split-label"><input type="checkbox" class="split-check" value="${user}" checked> ${user}</label>`;
+    });
 }
 
 async function saveExpense() {
@@ -285,7 +283,7 @@ async function saveExpense() {
     }
 }
 
-// --- Chore Tracking Logic (Using Custom Dropdown) ---
+// --- Chore Tracking Logic ---
 
 document.querySelector('.button-grid button:nth-child(2)').onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
@@ -296,7 +294,12 @@ document.querySelector('.button-grid button:nth-child(2)').onclick = async () =>
 
 async function loadChoreActiveUsers() {
     const container = document.getElementById("dynamic-chore-split-users");
-    container.innerHTML = '<div style="text-align: center;"><img src="loding.png" class="custom-loader-img" style="width: 80px; margin: 10px auto;" alt="Loading..."></div>';
+    
+    if (cachedUsers) {
+        renderChoreSplitUsers(cachedUsers, container);
+    } else {
+        container.innerHTML = '<div style="text-align: center;"><img src="loding.png" class="custom-loader-img" style="width: 80px; margin: 10px auto;" alt="Loading..."></div>';
+    }
     
     try {
         const response = await fetch(API_URL, {
@@ -306,18 +309,22 @@ async function loadChoreActiveUsers() {
         const data = await response.json();
         
         if (data.status === "success") {
-            container.innerHTML = "";
-            data.users.forEach(user => {
-                if (user !== currentUser) {
-                    container.innerHTML += `<label class="split-label"><input type="checkbox" class="chore-split-check" value="${user}" checked> ${user}</label>`;
-                }
-            });
-        } else {
-            container.innerHTML = "Error loading users.";
+            cachedUsers = data.users;
+            localStorage.setItem("messkhata_users", JSON.stringify(data.users));
+            renderChoreSplitUsers(data.users, container);
         }
     } catch (error) {
-        container.innerHTML = "Connection failed.";
+        if (!cachedUsers) container.innerHTML = "Connection failed.";
     }
+}
+
+function renderChoreSplitUsers(users, container) {
+    container.innerHTML = "";
+    users.forEach(user => {
+        if (user !== currentUser) {
+            container.innerHTML += `<label class="split-label"><input type="checkbox" class="chore-split-check" value="${user}" checked> ${user}</label>`;
+        }
+    });
 }
 
 async function loadChores() {
@@ -325,7 +332,11 @@ async function loadChores() {
     document.getElementById("choreSelectBtn").innerText = "Select Work...";
     document.getElementById("choreSelect").value = "";
     
-    optionsEl.innerHTML = '<div class="dropdown-item">Loading...</div>';
+    if (cachedChoresList) {
+        renderChoreOptions(cachedChoresList, optionsEl);
+    } else {
+        optionsEl.innerHTML = '<div class="dropdown-item">Loading...</div>';
+    }
     
     try {
         const response = await fetch(API_URL, {
@@ -335,14 +346,20 @@ async function loadChores() {
         const data = await response.json();
         
         if (data.status === "success") {
-            optionsEl.innerHTML = '';
-            data.chores.forEach(chore => {
-                optionsEl.innerHTML += `<div class="dropdown-item" onclick="selectCustomChore('${chore.name}', ${chore.amount})">${chore.name}</div>`;
-            });
+            cachedChoresList = data.chores;
+            localStorage.setItem("messkhata_chores_list", JSON.stringify(data.chores));
+            renderChoreOptions(data.chores, optionsEl);
         }
     } catch (error) {
-        optionsEl.innerHTML = '<div class="dropdown-item">Error loading</div>';
+        if (!cachedChoresList) optionsEl.innerHTML = '<div class="dropdown-item">Error loading</div>';
     }
+}
+
+function renderChoreOptions(chores, optionsEl) {
+    optionsEl.innerHTML = '';
+    chores.forEach(chore => {
+        optionsEl.innerHTML += `<div class="dropdown-item" onclick="selectCustomChore('${chore.name}', ${chore.amount})">${chore.name}</div>`;
+    });
 }
 
 function selectCustomChore(name, amount) {
@@ -403,20 +420,18 @@ async function saveChore() {
     }
 }
 
-// --- UPDATED PAY DETAILS LOGIC (INSTANT LOAD) ---
+// --- Pay Details Logic ---
 document.querySelector('.button-grid button:nth-child(3)').onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
     document.getElementById("pay-details-screen").style.display = "block";
     const contentEl = document.getElementById("pay-details-content");
 
-    // 1. Show instantly if we have cached data
     if (cachedAppData) {
         renderPayDetails(cachedAppData, contentEl);
     } else {
         contentEl.innerHTML = '<div style="text-align: center;"><img src="loding.png" class="custom-loader-img" alt="Calculating..."><p style="color: #2c3e50; margin-top: 10px; font-weight: bold;">Calculating balances...</p></div>';
     }
 
-    // 2. Silently fetch fresh data in the background
     try {
         const response = await fetch(API_URL, {
             method: "POST",
@@ -496,7 +511,7 @@ function renderPayDetails(data, contentEl) {
     contentEl.innerHTML = html;
 }
 
-// --- UPDATED EXPENSE REVIEW LOGIC (INSTANT LOAD & 30 ROW LIMIT) ---
+// --- Expense Review Logic ---
 document.querySelector('.button-grid button:nth-child(4)').onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
     document.getElementById("expense-review-screen").style.display = "block";
@@ -509,7 +524,6 @@ document.querySelector('.button-grid button:nth-child(4)').onclick = async () =>
     currentHistoryTab = 'expenses';
     switchHistoryFilter('all');
 
-    // 1. Show instantly from cache
     if (cachedAppData) {
         currentHistoryData = cachedAppData;
         renderHistoryContent();
@@ -517,7 +531,6 @@ document.querySelector('.button-grid button:nth-child(4)').onclick = async () =>
         contentEl.innerHTML = '<div style="text-align: center;"><img src="loding.png" class="custom-loader-img" alt="Loading..."><p style="color: #2c3e50; margin-top: 10px; font-weight: bold;">Fetching history...</p></div>';
     }
 
-    // 2. Silently fetch fresh data
     try {
         const response = await fetch(API_URL, {
             method: "POST",
@@ -547,7 +560,6 @@ function renderHistoryContent() {
             expensesToShow = expensesToShow.filter(exp => exp.paidBy === currentUser || exp.splitWith.includes(currentUser));
         }
         
-        // NEW: Only take the last 30 entries to prevent rendering lag
         expensesToShow = expensesToShow.slice(-30).reverse();
 
         if (expensesToShow.length === 0) {
@@ -575,7 +587,6 @@ function renderHistoryContent() {
             choresToShow = choresToShow.filter(chore => chore.doneBy === currentUser || (chore.splitWith && chore.splitWith.includes(currentUser)));
         }
         
-        // NEW: Only take the last 30 entries to prevent rendering lag
         choresToShow = choresToShow.slice(-30).reverse();
 
         if (choresToShow.length === 0) {
@@ -601,7 +612,6 @@ function renderHistoryContent() {
     contentEl.innerHTML = html;
 }
 
-// Switch Tab Logic
 function switchHistoryTab(tab) {
     currentHistoryTab = tab;
     if (tab === 'expenses') {
@@ -618,7 +628,6 @@ function switchHistoryTab(tab) {
     renderHistoryContent();
 }
 
-// Switch Filter Logic (Pill Buttons)
 function switchHistoryFilter(filter) {
     currentHistoryFilter = filter;
     if (filter === 'all') {
@@ -635,71 +644,7 @@ function switchHistoryFilter(filter) {
     renderHistoryContent();
 }
 
-// Generate the HTML based on the selected tab AND the filter
-function renderHistoryContent() {
-    const contentEl = document.getElementById("review-content");
-    const filterValue = currentHistoryFilter;
-    let html = '';
-
-    if (currentHistoryTab === 'expenses') {
-        // Filter expenses
-        let expensesToShow = currentHistoryData.expenses;
-        if (filterValue === 'me') {
-            expensesToShow = expensesToShow.filter(exp => exp.paidBy === currentUser || exp.splitWith.includes(currentUser));
-        }
-
-        if (expensesToShow.length === 0) {
-            html = `<p style="font-size: 14px;">No expenses logged for this view.</p>`;
-        } else {
-            expensesToShow.slice().reverse().forEach(exp => {
-                const d = new Date(exp.date);
-                const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-                
-                html += `
-                <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <div style="display:flex; justify-content:space-between; font-weight:bold; color:#333;">
-                        <span>${exp.item}</span>
-                        <span style="color:#e74c3c;">₹${exp.amount}</span>
-                    </div>
-                    <div style="font-size:12px; color:#7f8fa6; margin-top:4px;">
-                        ${dateStr} | Paid by: <b>${exp.paidBy}</b> <br>
-                        Split: ${exp.splitWith}
-                    </div>
-                </div>`;
-            });
-        }
-    } else {
-        // Filter chores
-        let choresToShow = currentHistoryData.chores;
-        if (filterValue === 'me') {
-            choresToShow = choresToShow.filter(chore => chore.doneBy === currentUser || (chore.splitWith && chore.splitWith.includes(currentUser)));
-        }
-
-        if (choresToShow.length === 0) {
-            html = `<p style="font-size: 14px;">No work logged for this view.</p>`;
-        } else {
-            choresToShow.slice().reverse().forEach(chore => {
-                const d = new Date(chore.date);
-                const dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-                const splitText = chore.splitWith ? `<br>Paid by: ${chore.splitWith}` : "";
-                
-                html += `
-                <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <div style="display:flex; justify-content:space-between; font-weight:bold; color:#333;">
-                        <span>${chore.item}</span>
-                        <span style="color:#27ae60;">+₹${chore.amount}</span>
-                    </div>
-                    <div style="font-size:12px; color:#7f8fa6; margin-top:4px;">
-                        ${dateStr} | Done by: <b>${chore.doneBy}</b> ${splitText}
-                    </div>
-                </div>`;
-            });
-        }
-    }
-    contentEl.innerHTML = html;
-}
-
-// --- Admin Logic (Using Custom Dropdowns) ---
+// --- Admin Logic ---
 
 document.getElementById("admin-btn").onclick = async () => {
     document.getElementById("dashboard-screen").style.display = "none";
@@ -885,17 +830,14 @@ async function adminChore(subAction) {
 // --- Live Chat Engine ---
 
 document.getElementById("chat-nav-btn").onclick = () => {
-    // Stop dashboard polling
     if (dashboardPollingInterval) clearInterval(dashboardPollingInterval);
     
     document.getElementById("dashboard-screen").style.display = "none";
     document.getElementById("chat-screen").style.display = "block";
     
-    // Hide the red badge immediately
     document.getElementById("chat-badge").style.display = "none";
     
     loadChatMessages();
-    // Fast polling (every 1.5 seconds) for a real-time, smooth feel
     chatPollingInterval = setInterval(loadChatMessages, 1500); 
 };
 
@@ -915,27 +857,21 @@ async function loadChatMessages() {
         const data = await response.json();
         
         if (data.status === "success") {
-            // Update local memory so we don't trigger fake alerts later
             lastKnownChatCount = data.totalMessages;
             localStorage.setItem("roombook_chat_count", lastKnownChatCount);
             
             const chatBox = document.getElementById("chat-box");
             
-            // Only re-render if the number of messages changed to prevent screen flickering
             const currentElementCount = chatBox.querySelectorAll('.chat-bubble').length;
             if (data.messages.length === currentElementCount && currentElementCount !== 0) return;
 
             let html = '';
             data.messages.forEach(msg => {
                 const d = new Date(msg.date);
-                // Create time string
                 let timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                // Create date string (e.g., 24/7/2026)
                 let dateStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-                // Combine them
                 let fullDateTime = `${dateStr} • ${timeStr}`;
                 
-                // Magical Regex to find @names and wrap them in the highlight CSS class!
                 let formattedText = msg.message.replace(/(@\w+)/g, '<span class="tag-highlight">$1</span>');
 
                 if (msg.role === "Admin") {
@@ -961,7 +897,6 @@ async function loadChatMessages() {
             });
             
             chatBox.innerHTML = html;
-            // Smoothly auto-scroll to the absolute bottom of the chat
             chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
         }
     } catch (error) { console.log("Chat load failed"); }
@@ -972,9 +907,8 @@ async function sendChatMessage() {
     const text = inputEl.value.trim();
     if (!text) return;
 
-    inputEl.value = ""; // Clear immediately for snappy feel
+    inputEl.value = ""; 
     
-    // Optimistically scroll to bottom
     const chatBox = document.getElementById("chat-box");
     chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
 
@@ -984,36 +918,29 @@ async function sendChatMessage() {
             body: JSON.stringify({
                 action: "sendChat",
                 userId: currentUser,
-                role: currentRole, // Passes "User" or "Admin"
+                role: currentRole, 
                 message: text
             })
         });
-        // Force an immediate reload of chat box
         loadChatMessages();
     } catch (error) {
         alert("Failed to send message.");
     }
 }
 
-// Allow pressing "Enter" key on phone keyboard to send
 document.getElementById("chatInput").addEventListener("keypress", function(event) {
     if (event.key === "Enter") sendChatMessage();
 });
 
-// Automatically shrink screen and scroll to the bottom when the virtual keyboard opens
 if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", () => {
         const chatScreen = document.getElementById("chat-screen");
         
         if (chatScreen.style.display === "block") {
-            // Force the app to exactly match the new visible screen height
             chatScreen.style.height = window.visualViewport.height + "px";
-            
-            // Force the browser to stop panning upward
             window.scrollTo(0, 0); 
             document.body.scrollTop = 0;
             
-            // Scroll the chat bubbles to the bottom
             const chatBox = document.getElementById("chat-box");
             chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
         }
@@ -1024,11 +951,9 @@ if (window.visualViewport) {
 let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
-    // Prevent the default browser banner from appearing
     e.preventDefault();
     deferredPrompt = e;
 
-    // Check if the user previously dismissed the prompt during this session
     if (!sessionStorage.getItem('pwa_banner_dismissed')) {
         document.getElementById('pwa-install-banner').style.display = 'block';
     }
@@ -1036,7 +961,6 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 document.getElementById('pwa-install-btn').addEventListener('click', async () => {
     if (deferredPrompt) {
-        // Show the native install prompt triggered by user click
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
         
@@ -1053,7 +977,6 @@ function dismissInstallBanner() {
     sessionStorage.setItem('pwa_banner_dismissed', 'true');
 }
 
-// Hide banner automatically if app is already installed
 window.addEventListener('appinstalled', () => {
     document.getElementById('pwa-install-banner').style.display = 'none';
     deferredPrompt = null;
@@ -1062,47 +985,37 @@ window.addEventListener('appinstalled', () => {
 // --- NATIVE APP BACK BUTTON LOGIC ---
 let backPressTimer = null;
 
-// Push an initial history state to act as a trap for the physical back button
 window.history.pushState({ page: 'messkhata' }, "");
 
 window.addEventListener('popstate', (e) => {
     const dashboard = document.getElementById("dashboard-screen");
     const login = document.getElementById("login-screen");
     
-    // CASE 1: If inside a menu (Expense, Work, Chat, Admin) -> Go back to Dashboard
     if (dashboard.style.display === "none" && login.style.display === "none") {
         goBackToDashboard();
-        // Reset the trap so the user stays inside the app
         window.history.pushState({ page: 'messkhata' }, "");
     } 
-    // CASE 2: If already on Dashboard -> Handle Double Press to Exit
     else if (dashboard.style.display === "block") {
         if (backPressTimer) {
-            // Second press detected within the time limit! 
-            // Force the browser back action to native close the PWA
             window.history.back(); 
         } else {
-            // First press detected. Show toast notification and set a timer.
             showExitWarning();
             window.history.pushState({ page: 'messkhata' }, "");
             
             backPressTimer = setTimeout(() => {
                 backPressTimer = null;
-            }, 2000); // User has 2 seconds to press back again
+            }, 2000); 
         }
     } 
-    // CASE 3: If on Login Screen -> Prevent accidental closure
     else {
          window.history.pushState({ page: 'messkhata' }, "");
     }
 });
 
-// Function to create a temporary Android-style floating toast message
 function showExitWarning() {
     let warning = document.createElement("div");
     warning.innerText = "Press back again to exit";
     
-    // Styling to make it look like a native Android popup
     warning.style.position = "fixed";
     warning.style.bottom = "80px";
     warning.style.left = "50%";
@@ -1117,7 +1030,6 @@ function showExitWarning() {
     
     document.body.appendChild(warning);
     
-    // Smoothly fade out and remove the element from the DOM after 2 seconds
     setTimeout(() => {
         warning.style.opacity = "0";
         setTimeout(() => warning.remove(), 300);
