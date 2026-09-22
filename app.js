@@ -10,6 +10,22 @@ let chatPollingInterval;
 let dashboardPollingInterval;
 let lastKnownChatCount = parseInt(localStorage.getItem("roombook_chat_count")) || 0;
 
+// --- NEW: Auto-Login Check ---
+window.addEventListener('load', () => {
+    const savedUser = localStorage.getItem("messkhata_user");
+    const savedPass = localStorage.getItem("messkhata_pass");
+    const savedRole = localStorage.getItem("messkhata_role");
+
+    if (savedUser && savedPass) {
+        currentUser = savedUser;
+        currentPassword = savedPass;
+        currentRole = savedRole;
+        
+        document.getElementById("login-screen").style.display = "none";
+        showDashboard(currentRole);
+    }
+});
+
 // --- Global Custom Dropdown Logic ---
 function toggleDropdown(id) {
     document.querySelectorAll('.dropdown-content').forEach(el => {
@@ -57,6 +73,11 @@ async function login() {
             currentUser = userIdInput;
             currentPassword = passwordInput;
             currentRole = data.role;
+            
+            // NEW: Save details to the device's local memory
+            localStorage.setItem("messkhata_user", currentUser);
+            localStorage.setItem("messkhata_pass", currentPassword);
+            localStorage.setItem("messkhata_role", currentRole);
             
             document.getElementById("login-screen").style.display = "none";
 
@@ -165,6 +186,12 @@ function goBackToDashboard() {
 function logout() {
     currentUser = "";
     currentPassword = "";
+    
+    // NEW: Wipe the saved details from the device's memory
+    localStorage.removeItem("messkhata_user");
+    localStorage.removeItem("messkhata_pass");
+    localStorage.removeItem("messkhata_role");
+    
     document.getElementById("dashboard-screen").style.display = "none";
     document.getElementById("login-screen").style.display = "block";
     document.getElementById("userId").value = "";
